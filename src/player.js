@@ -8,52 +8,62 @@ const DIRS = {
 
 const Player = {
   x: 0, y: 0, dir: 'down',
+  jobs: [],          // 할 일 줄: { tx, ty, act } — act면 도착해서 그 칸에 일한다
+  path: [],          // 지금 가는 길(칸)
+  onArrive: null,    // 할 일 칸에 닿으면 부른다 (main에서 정함)
 
   init() {
+    this.place(World.start.x, World.start.y);
+  },
+  place(tx, ty) { Object.assign(this, this.spot(tx, ty)); },
+  // 칸 안에서 서는 자리
+  spot(tx, ty) {
     const T = CONFIG.tile;
-    this.x = World.start.x * T + T / 2;
-    this.y = World.start.y * T + T - 2;
+    return { x: tx * T + T / 2, y: ty * T + T - 4 };
+  },
+  tileNow() {
+    const T = CONFIG.tile;
+    return { tx: Math.floor(this.x / T), ty: Math.floor(this.y / T) };
+  },
+
+  // 새로 누르거나 그으면 하던 일을 버리고 새 줄로 바꾼다
+  setJobs(jobs) {
+    this.jobs = jobs;
+    this.path = [];
+    this.nextJob();
+  },
+  nextJob() {
+    while (this.jobs.length) {
+      const path = World.findPath(this.tileNow(), this.jobs[0]);
+      if (path) { this.path = path; return; }
+      this.jobs.shift();   // 못 가는 칸은 건너뛴다
+    }
   },
 
   update(dt) {
-    let mx = 0, my = 0;
-    if (Input.isDown('ArrowLeft', 'KeyA')) mx--;
-    if (Input.isDown('ArrowRight', 'KeyD')) mx++;
-    if (Input.isDown('ArrowUp', 'KeyW')) my--;
-    if (Input.isDown('ArrowDown', 'KeyS')) my++;
-    if (!mx && !my) return;
-
-    // 대각선이면 옆을 본다 (→ docs/기술.md 1 방향)
-    if (mx) this.dir = mx > 0 ? 'right' : 'left';
-    else this.dir = my > 0 ? 'down' : 'up';
-
-    const step = CONFIG.playerSpeed * dt / Math.hypot(mx, my);
-    // 축마다 따로 막아서 벽을 따라 미끄러지게
-    this.tryMove(mx * step, 0);
-    this.tryMove(0, my * step);
-  },
-
-  tryMove(dx, dy) {
-    const nx = this.x + dx, ny = this.y + dy;
-    if (!this.hits(nx, ny)) { this.x = nx; this.y = ny; }
-  },
-
-  hits(x, y) {
-    const T = CONFIG.tile, { w, h } = CONFIG.playerHitbox;
-    const l = Math.floor((x - w / 2) / T), r = Math.floor((x + w / 2 - 0.01) / T);
-    const t = Math.floor((y - h) / T),     b = Math.floor((y - 0.01) / T);
-    for (let ty = t; ty <= b; ty++)
-      for (let tx = l; tx <= r; tx++)
-        if (World.isSolid(tx, ty)) return true;
-    return false;
-  },
-
-  // 바라보는 앞 칸
-  target() {
-    const T = CONFIG.tile, d = DIRS[this.dir];
-    return {
-      tx: Math.floor(this.x / T) + d.dx,
-      ty: Math.floor((this.y - 1) / T) + d.dy,
-    };
+    if (!this.jobs.length) return;
+    let step = CONFIG.playerSpeed * dt;
+    while (step > 0) {
+      if (!this.path.length) {
+        const job = this.jobs.shift();
+        if (job.act) this.onArrive?.(job);
+        this.nextJob();
+        return;
+      }
+      const goal = this.spot(this.path[0].tx, this.path[0].ty);
+      const dx = goal.x - this.x, dy = goal.y - this.y, d = Math.hypot(dx, dy);
+      // 대각선이면 옆을 본다 (→ docs/기술.md 1 방향)
+      if (Math.abs(dx) > 0.01) this.dir = dx > 0 ? 'right' : 'left';
+      else if (Math.abs(dy) > 0.01) this.dir = dy > 0 ? 'down' : 'up';
+      if (d <= step) {
+        this.x = goal.x; this.y = goal.y;
+        this.path.shift();
+        step -= d;
+      } else {
+        // 두 축을 같은 비율로 (→ docs/기술.md 1 이동)
+        this.x += dx / d * step; this.y += dy / d * step;
+        step = 0;
+      }
+    }
   },
 };

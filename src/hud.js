@@ -1,9 +1,19 @@
-// 글자 정보는 캔버스 대신 HTML로 (작은 해상도에서 한글이 뭉개져서)
+// 글자 · 버튼은 캔버스 대신 HTML로 (작은 해상도에서 한글이 뭉개져서)
 const Hud = {
-  el: null, msgEl: null, msgTimer: 0,
-  init() {
-    this.el = document.getElementById('hud');
+  topEl: null, msgEl: null, msgTimer: 0,
+
+  init(state, onNextDay) {
+    this.topEl = document.getElementById('top');
     this.msgEl = document.getElementById('msg');
+    const seeds = document.getElementById('seeds');
+    for (const [id, c] of Object.entries(CROPS)) {
+      const b = document.createElement('button');
+      b.textContent = c.name;
+      b.dataset.id = id;
+      b.onclick = () => { state.seed = id; };
+      seeds.append(b);
+    }
+    document.getElementById('nextDay').onclick = onNextDay;
   },
   say(text) {
     this.msgEl.textContent = text;
@@ -11,11 +21,8 @@ const Hud = {
   },
   update(dt, state) {
     if (this.msgTimer > 0 && (this.msgTimer -= dt) <= 0) this.msgEl.textContent = '';
-    const seeds = Object.entries(CROPS).map(([id, c], i) =>
-      `<span class="${id === state.seed ? 'on' : ''}">[${i + 1}] ${c.name}</span>`).join(' ');
+    for (const b of document.querySelectorAll('#seeds button')) b.classList.toggle('on', b.dataset.id === state.seed);
     const bag = Object.entries(CROPS).map(([id, c]) => `${c.name} ${Farm.bag[id] || 0}`).join(' · ');
-    this.el.innerHTML =
-      `<b>${state.day}일째</b> &nbsp; 씨앗: ${seeds} &nbsp; | &nbsp; 가방: ${bag}<br>` +
-      `방향키/WASD 이동 · Space 하기(심기 · 캐기) · N 하루 넘기기(임시)`;
+    this.topEl.textContent = `${state.day}일째   가방: ${bag}`;
   },
 };

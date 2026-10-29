@@ -1,35 +1,33 @@
 const state = { day: 1, seed: Object.keys(CROPS)[0] };
 
-Input.init();
 World.init();
 Farm.init(TUTORIAL.field);
 Player.init();
 Render.init();
-Hud.init();
+Touch.init(Render.canvas);
+Hud.init(state, () => {
+  Farm.newDay();
+  state.day++;
+  Hud.say(state.day + '일째 아침');
+});
+
+// 밭에서 시작했으면 그은 칸마다 일하고, 아니면 마지막 칸으로 걸어가기만
+Touch.onDone = (tiles, fromPlot) => {
+  if (fromPlot) Player.setJobs(tiles.map(t => ({ ...t, act: true })));
+  else Player.setJobs([{ ...tiles[tiles.length - 1], act: false }]);
+};
+Player.onArrive = job => {
+  const msg = Farm.act(job.tx, job.ty, state.seed);
+  if (msg) Hud.say(msg);
+};
 
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-
-  Object.keys(CROPS).forEach((id, i) => {
-    if (Input.wasPressed('Digit' + (i + 1))) state.seed = id;
-  });
   Player.update(dt);
-  if (Input.wasPressed('Space', 'KeyE')) {
-    const { tx, ty } = Player.target();
-    const msg = Farm.act(tx, ty, state.seed);
-    if (msg) Hud.say(msg);
-  }
-  if (Input.wasPressed('KeyN')) {
-    Farm.newDay();
-    state.day++;
-    Hud.say(state.day + '일째 아침');
-  }
-
   Render.frame();
   Hud.update(dt, state);
-  Input.endFrame();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);

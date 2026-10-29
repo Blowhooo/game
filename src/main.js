@@ -32,6 +32,10 @@ Touch.onTap = t => {
   const seed = state.seed;
   state.seed = null;
   const ripe = Farm.rowHas(row, p => Farm.isRipe(p)), empty = Farm.rowHas(row, p => !p.crop);
+  if (ripe && Farm.bagFull() && !(seed && empty)) {
+    Hud.say('가방이 가득 찼어요 — 작업대에 갖다주세요');
+    return;
+  }
   if (!ripe && !(seed && empty)) {
     const p = Farm.plot(row.tiles[0].tx, row.tiles[0].ty);
     if (!p.crop) Hud.say('씨앗을 골라 줄을 누르세요');
@@ -47,6 +51,8 @@ Player.onArrive = job => {
   if (job.give) { Wife.receive(Farm.bag); return; }
   const msg = Farm.work(job.tx, job.ty, job.seed);
   if (msg) Hud.say(msg);
+  // 가방이 차면 캐기만 남은 칸은 그만 간다(심을 빈 칸은 마저 간다)
+  if (Farm.bagFull()) Player.jobs = Player.jobs.filter(j => j.seed && !Farm.plot(j.tx, j.ty).crop);
 };
 
 let last = performance.now();

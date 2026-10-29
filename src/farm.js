@@ -22,6 +22,8 @@ const Farm = {
 
   plot(tx, ty) { return this.plots[tx + ',' + ty] || null; },
   rowAt(tx, ty) { return this.rows.find(r => r.tiles.some(t => t.tx === tx && t.ty === ty)) || null; },
+  bagCount() { return Object.values(this.bag).reduce((a, n) => a + n, 0); },
+  bagFull() { return this.bagCount() >= CONFIG.bagSize; },
   isRipe(p) { return p.crop && p.grown >= CROPS[p.crop].days; },
   rowHas(row, test) { return row.tiles.some(t => test(this.plot(t.tx, t.ty))); },
 
@@ -30,7 +32,8 @@ const Farm = {
     const p = this.plot(tx, ty);
     if (!p) return null;
     const msg = [];
-    if (this.isRipe(p)) {
+    if (this.isRipe(p) && this.bagFull()) msg.push('가방이 가득 찼어요');
+    else if (this.isRipe(p)) {
       this.bag[p.crop] = (this.bag[p.crop] || 0) + 1;
       msg.push(CROPS[p.crop].name + ' 캠');
       p.crop = null;

@@ -34,6 +34,6 @@ const Hud = {
     for (const b of document.querySelectorAll('#seeds button')) b.classList.toggle('on', b.dataset.id === state.seed);
     const list = o => Object.entries(CROPS).filter(([id]) => o[id]).map(([id, c]) => `${c.name} ${o[id]}`).join(' · ') || '없음';
     const waiting = Wife.queue.length + (Wife.current ? 1 : 0);
-    this.topEl.textContent = `${state.day}일째  |  가방: ${list(Farm.bag)}  |  손질 기다림: ${waiting}  |  손질 끝: ${list(Wife.ready)}`;
+    this.topEl.textContent = `${state.day}일째  |  가방 ${Farm.bagCount()}/${CONFIG.bagSize}: ${list(Farm.bag)}  |  손질 기다림: ${waiting}  |  손질 끝: ${list(Wife.ready)}`;
   },
 };

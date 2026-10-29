@@ -6,9 +6,11 @@ const Wife = {
   ready: {},          // 손질된 것 → 개수 (저녁에 판다)
   speech: null, speechTimer: 0,
 
-  init() {
-    Object.assign(this, Player.spot(...WIFE.at));
-    World.blockers.add(WIFE.at.join(','));
+  // 장면에 들어설 때 그 장면의 자리로
+  enter(scene) {
+    const [tx, ty] = WIFE.at[scene];
+    Object.assign(this, Player.spot(tx, ty));
+    World.block(scene, tx, ty);
   },
 
   say(kind) {

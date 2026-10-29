@@ -1,25 +1,42 @@
-// 맵 글자 → 칸 조회
+// 지금 장면의 맵 글자 → 칸 조회
 const World = {
-  w: MAP[0].length,
-  h: MAP.length,
+  scene: null, map: null,
+  w: 0, h: 0,
   start: null,
-  blockers: new Set(),   // 맵 글자 말고도 막힌 칸(사람이 서 있는 자리 등): "x,y"
-  init() {
-    MAP.forEach((row, y) => {
+  blockers: {},   // 장면마다 맵 글자 말고도 막힌 칸(사람이 서 있는 자리 등): scene → Set("x,y")
+
+  load(scene) {
+    this.scene = scene;
+    this.map = SCENES[scene];
+    this.w = this.map[0].length;
+    this.h = this.map.length;
+    this.map.forEach((row, y) => {
       const x = row.indexOf('P');
       if (x >= 0) this.start = { x, y };
     });
   },
+  block(scene, tx, ty) { (this.blockers[scene] ||= new Set()).add(tx + ',' + ty); },
+  unblock(scene, tx, ty) { this.blockers[scene]?.delete(tx + ',' + ty); },
+
   char(tx, ty) {
     if (tx < 0 || ty < 0 || tx >= this.w || ty >= this.h) return null;
-    const c = MAP[ty][tx];
-    return c === 'P' ? '.' : c;
+    const c = this.map[ty][tx];
+    // P는 그 장면의 바닥
+    return c === 'P' ? (this.scene === 'shop' ? '_' : '.') : c;
   },
   tile(tx, ty) { return TILES[this.char(tx, ty)] || null; },
   // 맵 밖도 막힌 칸으로 본다
   isSolid(tx, ty) {
     const t = this.tile(tx, ty);
-    return !t || t.solid || this.blockers.has(tx + ',' + ty);
+    return !t || t.solid || !!this.blockers[this.scene]?.has(tx + ',' + ty);
+  },
+  // 이 장면에서 조건에 맞는 칸들
+  find(test) {
+    const out = [];
+    for (let ty = 0; ty < this.h; ty++)
+      for (let tx = 0; tx < this.w; tx++)
+        if (test(this.tile(tx, ty))) out.push({ tx, ty });
+    return out;
   },
 
   // 칸 단위 길 찾기(8방향, 대각선은 √2칸, 막힌 칸 모서리는 못 비집음). 시작 칸은 빼고 돌려준다. 못 가면 null
@@ -55,7 +72,7 @@ const World = {
     return null;
   },
 
-  // 막힌 칸(작업대 등) 옆으로 가는 가장 짧은 길. 옆 칸 { tx, ty }와 길을 돌려준다
+  // 막힌 칸(작업대 · 손님 자리 등) 옆으로 가는 가장 짧은 길. 옆 칸 { tx, ty }와 길을 돌려준다
   pathBeside(from, to) {
     let best = null;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {

@@ -75,13 +75,17 @@ const Render = {
 
     // 바닥(기준점) y가 작은 것부터 (→ docs/아트_규격.md 2 그리는 순서)
     const list = [];
-    for (const [k, p] of Object.entries(Farm.plots)) {
+    if (World.scene === 'farm') for (const [k, p] of Object.entries(Farm.plots)) {
       if (!p.crop) continue;
       const [tx, ty] = k.split(',').map(Number);
       list.push({ y: ty * T + T - 1, draw: () => this.crop(tx * T, ty * T, p) });
     }
     list.push({ y: Player.y, draw: () => this.player() });
     list.push({ y: Wife.y, draw: () => this.wife() });
+    if (World.scene === 'shop') for (const c of Shop.customers) {
+      const p = Player.spot(c.seat.tx, c.seat.ty);
+      list.push({ y: p.y, draw: () => this.customer(p.x, p.y, c) });
+    }
     list.sort((a, b) => a.y - b.y).forEach(o => o.draw());
 
     // 머리 위: 손질 진행 막대, 말풍선
@@ -125,6 +129,20 @@ const Render = {
     this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
     const d = DIRS[Player.dir];
     if (Player.dir !== 'up') this.rect(x + 7 + d.dx * 3, y + 8, 2, 2, '#2a1e16');  // 눈
+  },
+
+  // 임시 손님: 머리 위에 원하는 메뉴(작물 색)와 남은 기다림 막대. 먹는 중이면 메뉴 대신 접시
+  customer(px, py, c) {
+    const x = px - 8, y = py - 32;
+    this.rect(px - 5, py - 2, 10, 3, '#0003');
+    this.rect(x + 3, y + 14, 10, 17, c.color);
+    this.rect(x + 4, y + 4, 8, 10, '#e8c19a');
+    if (c.eating) { this.rect(px - 4, y - 2, 8, 3, '#fff8ec'); return; }
+    this.rect(px - 5, y - 8, 10, 8, '#fff8ec');
+    this.rect(px - 3, y - 6, 6, 4, CROPS[c.crop].color);
+    const left = 1 - c.waited / c.patience;
+    this.rect(px - 8, y - 12, 16, 3, '#2b231d');
+    this.rect(px - 7, y - 11, 14 * left, 1, left > 0.3 ? '#7cc35a' : '#e05a3a');
   },
 
   // 임시 아내: 치마 + 불러 오는 배, 작업대(오른쪽)를 본다

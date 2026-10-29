@@ -21,7 +21,7 @@ const Farm = {
         Object.assign(this.plot(t.tx, t.ty), { crop, grown: CROPS[crop].days - (ripe ? 0 : 1) });
   },
 
-  plot(tx, ty) { return World.scene === 'farm' ? this.plots[tx + ',' + ty] || null : null; },
+  plot(tx, ty) { return this.plots[tx + ',' + ty] || null; },
   bagCount() { return Object.values(this.bag).reduce((a, n) => a + n, 0); },
   bagFull() { return this.bagCount() >= CONFIG.bagSize; },
   isRipe(p) { return p.crop && p.grown >= CROPS[p.crop].days; },

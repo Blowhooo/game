@@ -28,7 +28,21 @@ const Render = {
     this.ctx.imageSmoothingEnabled = false;
   },
 
-  tileColor(t) { return t.gate && World.opened.has(t.gate) ? t.openColor : t.color; },
+  tileColor(t) {
+    if (t.gate && World.opened.has(t.gate)) return t.openColor;
+    if (t.build && Build.done(t.build)) return BUILDINGS[t.build].color;
+    return t.color;
+  },
+
+  // 숲에서 딸 것: 나무 = 줄기 + 잎, 바위 = 회색 덩이, 덤불 = 연두 + 열매(오늘 땄으면 열매 없음)
+  gatherIcon(kind, x, y, picked) {
+    if (kind === 'wood') { this.rect(x + 6, y + 9, 4, 7, '#6b4a2a'); this.rect(x + 1, y, 14, 11, '#2a5a26'); this.rect(x + 3, y + 1, 6, 3, '#3a7434'); }
+    if (kind === 'stone') { this.rect(x + 2, y + 5, 12, 10, '#8c8c88'); this.rect(x + 4, y + 6, 6, 3, '#b0b0aa'); }
+    if (kind === 'bush') {
+      this.rect(x + 2, y + 5, 12, 10, '#6fbf4a');
+      if (!picked) for (const [dx, dy] of [[4, 7], [9, 9], [6, 12]]) this.rect(x + dx, y + dy, 2, 2, '#e05a5a');
+    }
+  },
 
   // 화면이 남편을 따라가되 맵 밖은 안 보이게. 맵이 더 작으면 가운데
   follow() {
@@ -68,8 +82,12 @@ const Render = {
     this.ctx.fillStyle = '#1e1a17';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     for (let ty = 0; ty < World.h; ty++)
-      for (let tx = 0; tx < World.w; tx++)
-        this.rect(tx * T, ty * T, T, T, this.tileColor(World.tile(tx, ty)));
+      for (let tx = 0; tx < World.w; tx++) {
+        const t = World.tile(tx, ty);
+        this.rect(tx * T, ty * T, T, T, this.tileColor(t));
+        if (t.gather) this.gatherIcon(t.gather, tx * T, ty * T, Forest.isPicked(tx, ty));
+      }
+    this.sites();
 
     // 할 일 칸 · 긋는 중인 칸 표시
     for (const j of Player.jobs) if (j.act) this.outline(j.tx * T, j.ty * T, T, T, '#fff8');
@@ -77,19 +95,20 @@ const Render = {
 
     // 바닥(기준점) y가 작은 것부터 (→ docs/아트_규격.md 2 그리는 순서)
     const list = [];
-    if (World.scene === 'farm') for (const [k, p] of Object.entries(Farm.plots)) {
+    for (const [k, p] of Object.entries(Farm.plots)) {
       if (!p.crop) continue;
       const [tx, ty] = k.split(',').map(Number);
       list.push({ y: ty * T + T - 1, draw: () => this.crop(tx * T, ty * T, p) });
     }
     list.push({ y: Player.y, draw: () => this.player() });
     list.push({ y: Wife.y, draw: () => this.wife() });
-    if (World.scene === 'shop') for (const c of Shop.customers) {
-      const p = Player.spot(c.seat.tx, c.seat.ty);
-      list.push({ y: p.y, draw: () => this.customer(p.x, p.y, c) });
-    }
+    for (const g of Guests.list) list.push({ y: g.y, draw: () => this.guest(g) });
     list.sort((a, b) => a.y - b.y).forEach(o => o.draw());
 
+    // 작업대 위: 다 된 요리 접시 · 새참
+    const [wx, wy] = WIFE.at, bx = (wx - 1) * T, by = wy * T;
+    for (let i = 0; i < Math.min(6, Wife.readyCount()); i++) this.rect(bx + 2 + (i % 3) * 4, by + 3 + Math.floor(i / 3) * 5, 3, 3, '#fff8ec');
+    if (!state.snack && hourNow() >= DAY.snack.from) this.rect(bx + 4, by + 11, 8, 4, '#e8e0c8');
     // 머리 위: 손질 진행 막대, 말풍선
     if (Wife.current) {
       this.rect(Wife.x - 8, Wife.y - 37, 16, 4, '#2b231d');
@@ -133,28 +152,40 @@ const Render = {
     if (Player.dir !== 'up') this.rect(x + 7 + d.dx * 3, y + 8, 2, 2, '#2a1e16');  // 눈
   },
 
-  // 임시 손님: 머리 위에 원하는 메뉴(작물 색)와 남은 기다림 막대. 먹는 중이면 메뉴 대신 접시
-  customer(px, py, c) {
-    const x = px - 8, y = py - 32;
-    this.rect(px - 5, py - 2, 10, 3, '#0003');
-    this.rect(x + 3, y + 14, 10, 17, c.color);
+  // 임시 지나가는 사람. 먹는 중이면 머리 위에 접시
+  guest(g) {
+    const x = g.x - 8, y = g.y - 32;
+    this.rect(g.x - 5, g.y - 2, 10, 3, '#0003');
+    this.rect(x + 3, y + 14, 10, 17, g.color);
     this.rect(x + 4, y + 4, 8, 10, '#e8c19a');
-    if (c.eating) { this.rect(px - 4, y - 2, 8, 3, '#fff8ec'); return; }
-    this.rect(px - 5, y - 8, 10, 8, '#fff8ec');
-    this.rect(px - 3, y - 6, 6, 4, CROPS[c.crop].color);
-    const left = 1 - c.waited / c.patience;
-    this.rect(px - 8, y - 12, 16, 3, '#2b231d');
-    this.rect(px - 7, y - 11, 14 * left, 1, left > 0.3 ? '#7cc35a' : '#e05a3a');
+    if (g.eat > 0) this.rect(g.x - 4, y - 2, 8, 3, '#fff8ec');
   },
 
-  // 임시 아내: 치마 + 불러 오는 배, 작업대(오른쪽)를 본다
+  // 지을 터: 다 짓기 전엔 진행 막대
+  sites() {
+    const T = CONFIG.tile;
+    for (const id of Object.keys(BUILDINGS)) {
+      if (Build.done(id)) continue;
+      const tiles = World.find(t => t?.build === id);
+      if (!tiles.length) continue;
+      const x0 = Math.min(...tiles.map(t => t.tx)) * T, x1 = (Math.max(...tiles.map(t => t.tx)) + 1) * T;
+      const y0 = Math.min(...tiles.map(t => t.ty)) * T;
+      this.outline(x0, y0, x1 - x0, (Math.max(...tiles.map(t => t.ty)) + 1) * T - y0, '#6b4a33');
+      this.rect(x0 + 2, y0 + 3, x1 - x0 - 4, 3, '#2b231d');
+      this.rect(x0 + 3, y0 + 4, (x1 - x0 - 6) * Build.ratio(id), 1, '#ffd76a');
+    }
+  },
+
+  // 임시 아내: 치마 + 불러 오는 배, 작업대(왼쪽)를 본다. 장사하지 않을 땐 아기 옷을 뜬다(털실)
   wife() {
     const x = Wife.x - 8, y = Wife.y - 32;
     this.rect(Wife.x - 5, Wife.y - 2, 10, 3, '#0003');
     this.rect(x + 3, y + 14, 10, 17, '#b5536a');             // 몸
-    this.rect(x + 11, y + 19, 3, 6, '#b5536a');              // 배
+    this.rect(x + 2, y + 19, 3, 6, '#b5536a');               // 배
     this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
     this.rect(x + 3, y + 3, 10, 4, '#5a3a22');               // 머리카락
-    this.rect(x + 10, y + 8, 2, 2, '#2a1e16');               // 눈
+    this.rect(x + 4, y + 8, 2, 2, '#2a1e16');                // 눈
+    if (!Wife.current && !Wife.queue.length && (!Wife.readyCount() || Wife.tired()))
+      this.rect(x + 1, y + 22, 4, 4, '#f2a8c0');             // 털실
   },
 };

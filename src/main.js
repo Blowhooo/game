@@ -1,90 +1,110 @@
-// phase = 'day'(밭) → 'evening'(가게 안 장사) → 'night'(하루 끝). seed = 심으려고 고른 씨앗(한 번 쓰면 풀림)
-const state = { day: 1, phase: 'day', min: 0, seed: null, money: TUTORIAL.start.money, tools: new Set() };   // min = 지금 단계에서 흐른 게임 속 분
+// phase = 'day'(낮) → 'night'(하루 끝 화면). seed = 심으려고 고른 씨앗(한 번 쓰면 풀림)
+// min = 오늘 흐른 게임 속 분, fed = 오늘 채운 먹을 몫, snack = 오늘 새참 먹었나, restLeft = 쉰 덕분 버프가 남은 날
+// crops = 소식으로 씨앗이 풀린 작물
+const state = {
+  day: 1, phase: 'day', min: 0, seed: null, money: TUTORIAL.start.money,
+  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0,
+};
 
-// 장면 바꾸기: 맵 · 남편 · 아내 자리 · 화면 배율
-function enterScene(scene) {
-  World.load(scene);
-  Player.setJobs([]);
-  Player.init();
-  Wife.enter(scene);
-  Render.resize();
-}
-
-World.load('farm');
+World.load(MAP);
 Farm.init(TUTORIAL.field);
 Object.assign(Farm.seeds, TUTORIAL.start.seeds);
+const loaded = !location.search.includes('new') && Save.read();
 Store.init();
 Player.init();
-Wife.enter('farm');
+Wife.init();
+Guests.init();
 Render.init();
 Touch.init(Render.canvas);
 Hud.init(state, {
-  phase() { if (state.phase === 'day') startEvening(); },
-  nextDay() {
-    Hud.hideNight();
-    Farm.newDay();
-    state.day++;
-    state.phase = 'day';
-    state.min = 0;
-    enterScene('farm');
-    Hud.say(state.day + '일째 아침');
-  },
+  endDay() { if (state.phase === 'day') endDay(); },
+  rest() { if (state.phase === 'day' && state.min === 0) rest(); },
+  nextDay,
+  reset() { Save.clear(); location.search = ''; location.reload(); },
 });
+if (!loaded) Save.write();
+Hud.say(loaded ? `${state.day}일째 아침부터 이어서` : '1일째 아침');
 
-// 저녁 장사 시작: 시간이 다 됐거나 「일찍 문 열기」
-function startEvening() {
+// 행동마다 드는 분: 새참 · 쉰 덕분이면 빨라진다
+function costOf(kind) {
+  let m = DAY.cost[kind];
+  if (state.snack) m *= DAY.snack.mul;
+  if (state.restLeft > 0) m *= DAY.rest.mul;
+  return Math.round(m);
+}
+// 게임 속 시간 흘리기: 시계와 아내 손질이 같이 간다
+function advance(kind) {
+  const min = costOf(kind);
+  state.min += min;
+  Wife.work(min);
+}
+const dayMinutes = () => (DAY.to - DAY.from) * 60;
+const hourNow = () => DAY.from + state.min / 60;
+
+// 하루 끝(남편의 시계가 다 됐거나 「하루 마치기」): 남은 재료 정리 · 소식 · 밤 장면
+function endDay() {
+  Player.setJobs([]);
   state.seed = null;
-  state.phase = 'evening';
-  state.min = 0;
-  // 가방에 남은 건 가게에 들어가며 아내에게 건넨다
-  const left = Farm.bagCount();
-  if (left) Wife.receive(Farm.bag);
-  enterScene('shop');
-  Shop.start(state.day <= TUTORIAL.days);
-  Wife.say('evening');
-  if (left) Hud.say(`남은 ${left}개는 아내에게 건넴`);
-}
-
-function endEvening() {
-  // 아직 안 들어온 손님 · 앉아 있는 손님은 그냥 돌아간다
-  Shop.missed += Shop.plan.length + Shop.customers.filter(c => !c.eating).length;
-  Shop.plan = [];
-  for (const c of [...Shop.customers]) Shop.leave(c);
   state.phase = 'night';
-  // 오늘 손님이 알려 준 곳은 오늘 밤부터 열린다
+  // 가방에 남은 것도 아내에게 — 창고가 없으면 함께 다음 날로 남지 않는다
+  Wife.receive(Farm.bag);
+  const left = Wife.endDay();
+  const summary = { served: Guests.served, earned: Guests.earned, left, keep: Build.effect('keep') };
+  Guests.endDay();
+  if (state.restLeft > 0) state.restLeft--;
+  // 오늘 손님이 알려 준 소식은 오늘 밤부터
   const news = TOWN.news.find(n => n.day === state.day);
-  if (news) World.opened.add(news.opens);
-  Hud.night(state, news);
+  if (news?.opens) World.opened.add(news.opens);
+  if (news?.crop) state.crops.add(news.crop);
+  Hud.night(state, summary, news);
 }
 
-// 씨앗을 골랐으면 그은 칸에 심고, 안 골랐으면 그은 칸을 캔다. 작업대는 건네기, 그 밖은 걸어가기만
+// 쉬는 날: 아침에만 고를 수 있다. 일하지 않고 둘이 보내는 장면 → 다음 며칠 버프 (→ docs/기획.md 4)
+function rest() {
+  Player.setJobs([]);
+  state.seed = null;
+  state.phase = 'night';
+  state.restLeft = DAY.rest.days;
+  Hud.rest(state);
+}
+
+function nextDay() {
+  Hud.hideNight();
+  Farm.newDay();
+  Forest.newDay();
+  Object.assign(state, { day: state.day + 1, phase: 'day', min: 0, fed: 0, snack: false });
+  Player.setJobs([]);
+  Player.init();
+  Save.write();
+  Hud.say(state.day + '일째 아침');
+}
+
+// 누른 칸에 맞는 일: 밭은 긋기, 작업대 · 아내는 건네기, 숲은 따기, 터는 짓기, 마을 가게는 들어가기, 그 밖은 걸어가기
 Touch.onDone = (tiles, fromPlot) => {
   const t = tiles[0];
   const seed = state.seed;
   state.seed = null;
-  if (state.phase === 'night' || Store.isOpen()) return;
-  // 저녁: 손님을 누르면 옆으로 가서 요리를 낸다
-  if (state.phase === 'evening') {
-    const c = Shop.at(t.tx, t.ty);
-    if (!c || c.eating) { Player.setJobs(World.isSolid(t.tx, t.ty) ? [] : [{ ...t, act: false }]); return; }
-    const beside = World.pathBeside(Player.tileNow(), t);
-    if (beside) Player.setJobs([{ tx: beside.tx, ty: beside.ty, act: true, serve: c }]);
-    return;
-  }
-  // 가게: 문 앞까지 걸어가서 들어간다
-  const shop = World.tile(t.tx, t.ty)?.shop;
-  if (shop) {
-    const door = World.find(o => o?.shop === shop && o.door)[0];
+  if (state.phase !== 'day' || Store.isOpen()) return;
+  const tile = World.tile(t.tx, t.ty);
+  const [wx, wy] = WIFE.at;
+  const goBeside = (job, target = t) => {
+    const beside = World.pathBeside(Player.tileNow(), target);
+    if (beside) Player.setJobs([{ tx: beside.tx, ty: beside.ty, act: true, ...job }]);
+    else Hud.say('아직 갈 수 없어요');
+  };
+  // 마을 가게: 문 앞까지 걸어가서 들어간다
+  if (tile?.shop) {
+    const door = World.find(o => o?.shop === tile.shop && o.door)[0];
     const beside = World.pathBeside(Player.tileNow(), door);
-    if (beside) Player.setJobs([{ tx: beside.tx, ty: beside.ty, act: true, store: shop }]);
+    if (beside) Player.setJobs([{ tx: beside.tx, ty: beside.ty, act: true, store: tile.shop }]);
     else Hud.say('아직 갈 수 없어요');
     return;
   }
-  // 작업대: 옆까지 걸어가서 가방을 통째로 건넨다
-  if (World.tile(t.tx, t.ty)?.give) {
-    const beside = World.pathBeside(Player.tileNow(), t);
-    if (beside) Player.setJobs([{ tx: beside.tx, ty: beside.ty, act: true, give: true }]);
-    return;
+  if (tile?.give || (t.tx === wx && t.ty === wy)) return goBeside({ give: true });
+  if (tile?.gather) return goBeside({ gather: t });
+  if (tile?.build) {
+    if (Build.done(tile.build)) { Hud.say(`${BUILDINGS[tile.build].name} — ${BUILDINGS[tile.build].desc}`); return; }
+    return goBeside({ build: tile.build }, World.find(o => o?.build === tile.build));
   }
   if (!fromPlot) {
     Player.setJobs([{ ...t, act: false }]);
@@ -106,27 +126,47 @@ Touch.onDone = (tiles, fromPlot) => {
     else Hud.say(CROPS[p.crop].name + ' 자라는 중 (' + (CROPS[p.crop].days - p.grown) + '일 남음)');
     return;
   }
-  if (Farm.bagFull()) { Hud.say('가방이 가득 찼어요 — 작업대에 갖다주세요'); return; }
+  if (Farm.bagFull()) { Hud.say('가방이 가득 찼어요 — 아내에게 갖다주세요'); return; }
   Player.setJobs(ripe.map(o => ({ ...o, act: true })));
 };
 
-// 게임 속 시간 흘리기: 시계와 아내 손질이 같이 간다
-function advance(min) {
-  state.min += min;
-  Wife.work(min);
-}
-const phaseMinutes = phase => (DAY[phase].to - DAY[phase].from) * 60;
-
 Player.onArrive = job => {
-  const cost = DAY.day.cost;
-  if (job.give) { Wife.receive(Farm.bag); advance(cost.give); return; }
-  if (job.store) { advance(cost.store); Store.open(job.store); return; }
-  if (job.serve) { const msg = Shop.serve(job.serve); if (msg) Hud.say(msg); return; }
+  if (job.give) {
+    const had = Wife.receive(Farm.bag);
+    if (!had) Wife.say('empty');
+    // 새참: 정오쯤부터 아내가 준비해 둔다. 들르면 챙겨 먹는다 (→ docs/기획.md 5)
+    if (!state.snack && hourNow() >= DAY.snack.from) {
+      state.snack = true;
+      Wife.say('snack');
+      Hud.say('새참 먹음 — 오늘은 일이 조금 빨라져요');
+    }
+    if (had) advance('give');
+    return;
+  }
+  if (job.store) { advance('store'); Store.open(job.store); return; }
+  if (job.gather) {
+    const done = Forest.gather(job.gather.tx, job.gather.ty);
+    if (done.msg) Hud.say(done.msg);
+    if (done.cost) advance(done.cost);
+    return;
+  }
+  if (job.build) {
+    // 먹을 몫을 채워야 짓는다 — 벌이 아니라 순서 (→ docs/기획.md 5)
+    if (state.fed < DAY.food) { Hud.say('먹을 것부터 구해야 해…'); return; }
+    const done = Build.work(job.build);
+    Hud.say(done.msg);
+    if (!done.ok) return;
+    advance('build');
+    if (done.finished) { if (job.build === 'shop') Wife.say('built'); return; }
+    // 재료가 있는 동안 제자리에서 이어서 짓는다
+    if (state.min < dayMinutes()) { Player.jobs.unshift({ ...job }); Player.pause = 0.4; }
+    return;
+  }
   // 캐기 · 심기는 한 일만큼 시간이 든다
   const done = Farm.work(job.tx, job.ty, job.seed);
   if (done.msg) Hud.say(done.msg);
-  if (done.harvested) advance(cost.harvest);
-  if (done.planted) advance(cost.plant);
+  if (done.harvested) advance('harvest');
+  if (done.planted) advance('plant');
   // 가방이 차면 캐기만 남은 칸은 그만 간다(심을 빈 칸은 마저 간다)
   if (Farm.bagFull()) Player.jobs = Player.jobs.filter(j => j.seed && !Farm.plot(j.tx, j.ty).crop);
 };
@@ -135,15 +175,13 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  // 낮: 행동할 때만 시간이 흐른다(걷기는 0). 저녁: 실시간 (→ docs/기획.md 4)
-  Player.update(dt);
-  Wife.update(dt);
-  if (state.phase === 'day' && state.min >= phaseMinutes('day')) startEvening();
-  if (state.phase === 'evening') {
-    advance(dt * phaseMinutes('evening') / DAY.evening.seconds);
-    Shop.update(dt);
-    if (Shop.isOver() || state.min >= phaseMinutes('evening')) endEvening();
+  if (state.phase === 'day') {
+    // 낮은 남편이 행동할 때만 시계가 간다(걷기는 0). 지나가는 사람은 실제 시간으로 (→ docs/기획.md 4)
+    Player.update(dt);
+    Guests.update(dt);
+    if (state.min >= dayMinutes()) endDay();
   }
+  Wife.update(dt);
   Render.frame();
   Hud.update(dt, state);
   requestAnimationFrame(loop);

@@ -11,6 +11,7 @@ const Player = {
   jobs: [],          // 할 일 줄: { tx, ty, act } — act면 도착해서 그 칸에 일한다
   path: [],          // 지금 가는 길(칸)
   onArrive: null,    // 할 일 칸에 닿으면 부른다 (main에서 정함)
+  pause: 0,          // 제자리에서 일을 이어 할 때 한 번마다 쉬는 실제 초(짓기 손맛)
 
   init() {
     this.place(World.start.x, World.start.y);
@@ -30,6 +31,7 @@ const Player = {
   setJobs(jobs) {
     this.jobs = jobs;
     this.path = [];
+    this.pause = 0;
     this.nextJob();
   },
   nextJob() {
@@ -42,6 +44,7 @@ const Player = {
 
   update(dt) {
     if (!this.jobs.length) return;
+    if (this.pause > 0) { this.pause -= dt; return; }
     let step = CONFIG.playerSpeed * dt;
     while (step > 0) {
       if (!this.path.length) {

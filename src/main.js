@@ -21,9 +21,13 @@ Hud.init(state, {
     state.seed = null;
     if (state.phase === 'day') {
       state.phase = 'evening';
+      // 가방에 남은 건 가게에 들어가며 아내에게 건넨다
+      const left = Farm.bagCount();
+      if (left) Wife.receive(Farm.bag);
       enterScene('shop');
       Shop.start(state.day <= TUTORIAL.days);
       Wife.say('evening');
+      if (left) Hud.say(`남은 ${left}개는 아내에게 건넴`);
     } else if (state.phase === 'evening') {
       endEvening();
     }

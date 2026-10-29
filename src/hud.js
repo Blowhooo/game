@@ -1,8 +1,8 @@
-// 게임 속 시각: 단계의 시작 · 끝 시각 사이를 흐른 시간 비율만큼, 10분 단위
+// 게임 속 시각: 단계 시작 시각 + 흐른 분, 10분 단위
 function clock(state) {
   const d = DAY[state.phase];
   if (!d) return '밤';
-  const h = d.from + (d.to - d.from) * Math.min(1, state.t / d.seconds);
+  const h = Math.min(d.to, d.from + state.min / 60);
   const m = Math.floor((h % 1) * 6) * 10, hh = Math.floor(h);
   return `${hh < 12 ? '오전' : '오후'} ${hh > 12 ? hh - 12 : hh}:${String(m).padStart(2, '0')}`;
 }

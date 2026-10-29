@@ -26,21 +26,25 @@ const Farm = {
   isRipe(p) { return p.crop && p.grown >= CROPS[p.crop].days; },
 
   // 칸 하나 일: 다 자랐으면 캐고, seed가 있으면 빈 칸에 심는다. 캔 자리는 저절로 다시 심지 않는다
+  // 돌려주는 것: { msg, harvested, planted }
   work(tx, ty, seed) {
-    const p = this.plot(tx, ty);
-    if (!p) return null;
+    const p = this.plot(tx, ty), done = { msg: null, harvested: false, planted: false };
+    if (!p) return done;
     const msg = [];
     if (this.isRipe(p) && this.bagFull()) msg.push('가방이 가득 찼어요');
     else if (this.isRipe(p)) {
       this.bag[p.crop] = (this.bag[p.crop] || 0) + 1;
       msg.push(CROPS[p.crop].name + ' 캠');
       p.crop = null;
+      done.harvested = true;
     }
     if (!p.crop && seed) {
       p.crop = seed; p.grown = 0;
       msg.push(CROPS[seed].name + ' 심음');
+      done.planted = true;
     }
-    return msg.join(' · ') || null;
+    done.msg = msg.join(' · ') || null;
+    return done;
   },
 
   // 하루에 한 단계씩 저절로 자란다 (→ docs/기획.md 5)

@@ -4,6 +4,7 @@ const World = {
   w: 0, h: 0,
   start: null,
   blockers: {},   // 장면마다 맵 글자 말고도 막힌 칸(사람이 서 있는 자리 등): scene → Set("x,y")
+  opened: new Set(),   // 소식을 들어 열린 문(gate 이름)
 
   load(scene) {
     this.scene = scene;
@@ -28,6 +29,7 @@ const World = {
   // 맵 밖도 막힌 칸으로 본다
   isSolid(tx, ty) {
     const t = this.tile(tx, ty);
+    if (t?.gate && this.opened.has(t.gate)) return false;
     return !t || t.solid || !!this.blockers[this.scene]?.has(tx + ',' + ty);
   },
   // 이 장면에서 조건에 맞는 칸들

@@ -38,7 +38,7 @@ const Wife = {
     while (min > 0) {
       if (!this.current && this.queue.length) this.current = { crop: this.queue.shift(), t: 0 };
       if (!this.current) return;
-      const need = CROPS[this.current.crop].prep - this.current.t;
+      const need = CROPS[this.current.crop].prep * CONFIG.prepMul - this.current.t;
       if (min < need) { this.current.t += min; return; }
       min -= need;
       const crop = this.current.crop;
@@ -48,5 +48,5 @@ const Wife = {
     }
   },
 
-  progress() { return this.current ? this.current.t / CROPS[this.current.crop].prep : 0; },
+  progress() { return this.current ? this.current.t / (CROPS[this.current.crop].prep * CONFIG.prepMul) : 0; },
 };

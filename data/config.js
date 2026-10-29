@@ -3,5 +3,6 @@ const CONFIG = {
   tile: 16,             // 격자 한 칸 (→ docs/아트_규격.md 1)
   minTilePx: 44,        // 화면에서 한 칸의 최소 크기 (→ docs/기술.md 1 손가락 크기)
   playerSpeed: 64,      // 게임 픽셀/초 (임시)
-  bagSize: 4,           // 한 번에 옮길 수 있는 개수 = 한 줄 (임시, → docs/기획.md 5)
+  bagSize: 4,           // 한 번에 옮길 수 있는 개수 = 한 줄 (임시, → docs/기획.md 5). 바구니를 사면 바뀜
+  prepMul: 1,           // 아내 손질 시간 배율. 새 칼을 사면 바뀜
 };

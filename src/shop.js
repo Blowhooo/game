@@ -5,13 +5,13 @@ const Shop = {
   customers: [],   // { seat, crop, patience, waited, color, eating }
   plan: [],        // 아직 안 들어온 손님이 원할 메뉴들
   timer: 0,
-  served: 0, missed: 0,
+  served: 0, missed: 0, earned: 0,
 
   // tutorial이면 손님 수 · 메뉴를 그 시점 손질된 것에 맞춘다 — 실패할 수 없게 (→ docs/기획.md 5 튜토리얼)
   start(tutorial) {
     this.seats = World.find(t => t?.seat);
     this.customers = [];
-    this.served = this.missed = 0;
+    this.served = this.missed = this.earned = 0;
     this.timer = CUSTOMERS.every;   // 첫 손님은 바로
     const crops = Object.keys(CROPS);
     if (tutorial) {
@@ -66,8 +66,10 @@ const Shop = {
     }
     Wife.ready[c.crop]--;
     this.served++;
+    this.earned += CROPS[c.crop].dish;
+    state.money += CROPS[c.crop].dish;
     c.eating = CUSTOMERS.eat;
-    return name + ' 요리 냄';
+    return `${name} 요리 냄 +${CROPS[c.crop].dish}`;
   },
 };
 

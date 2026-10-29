@@ -18,7 +18,7 @@ const Hud = {
     const seeds = document.getElementById('seeds');
     Object.entries(CROPS).forEach(([id, c], i) => {
       const b = document.createElement('button');
-      b.innerHTML = `<small class="key">${i + 1}</small>${c.name}`;
+      b.innerHTML = `<small class="key">${i + 1}</small>${c.name} <span class="n"></span>`;
       b.dataset.id = id;
       b.onclick = () => this.pick(state, id);
       seeds.append(b);
@@ -41,10 +41,13 @@ const Hud = {
     this.msgTimer = 2;
   },
   // 하루를 마치는 장면: 날마다 돌아가며 하나 (→ docs/기획.md 4)
-  night(state) {
+  // news = 오늘 손님이 알려 준 소식(있으면)
+  night(state, news) {
     const n = NIGHTS[(state.day - 1) % NIGHTS.length];
     document.getElementById('nightDay').textContent =
-      `${state.day}일째 끝 · 손님 ${Shop.served}명` + (Shop.missed ? ` · ${Shop.missed}명 그냥 감` : '');
+      `${state.day}일째 끝 · 손님 ${Shop.served}명 · 번 돈 ${Shop.earned}` + (Shop.missed ? ` · ${Shop.missed}명 그냥 감` : '');
+    document.getElementById('nightNews').innerHTML = news
+      ? `손님이 말했다: ${news.line}<br>${TOWN.shops[news.opens].name} 가는 문이 열렸다` : '';
     document.getElementById('nightText').innerHTML = n.text;
     const ctx = document.getElementById('nightArt').getContext('2d');
     for (const [x, y, w, h, c] of n.art) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
@@ -55,14 +58,17 @@ const Hud = {
   update(dt, state) {
     if (this.msgTimer > 0 && (this.msgTimer -= dt) <= 0) this.msgEl.textContent = '';
     document.getElementById('seeds').style.visibility = state.phase === 'day' ? 'visible' : 'hidden';
-    for (const b of document.querySelectorAll('#seeds button')) b.classList.toggle('on', b.dataset.id === state.seed);
+    for (const b of document.querySelectorAll('#seeds button')) {
+      b.classList.toggle('on', b.dataset.id === state.seed);
+      b.querySelector('.n').textContent = Farm.seeds[b.dataset.id] || 0;
+    }
     const phaseBtn = document.getElementById('phaseBtn');
     phaseBtn.textContent = '일찍 문 열기';
     phaseBtn.style.visibility = state.phase === 'day' ? 'visible' : 'hidden';
 
     const list = o => Object.entries(CROPS).filter(([id]) => o[id]).map(([id, c]) => `${c.name} ${o[id]}`).join(' · ') || '없음';
     const waiting = Wife.queue.length + (Wife.current ? 1 : 0);
-    const parts = [`${state.day}일째 ${clock(state)}`];
+    const parts = [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`];
     if (state.phase === 'day') parts.push(`가방 ${Farm.bagCount()}/${CONFIG.bagSize}: ${list(Farm.bag)}`);
     parts.push(`손질 기다림: ${waiting}`, `손질 끝: ${list(Wife.ready)}`);
     if (state.phase !== 'day') parts.push(`손님 ${Shop.served}명`);

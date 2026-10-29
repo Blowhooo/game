@@ -3,6 +3,7 @@ const Farm = {
   rows: [],    // { tiles: [{tx, ty}] }
   plots: {},   // "x,y" → { crop, grown }
   bag: {},     // 캔 작물 → 개수
+  seeds: {},   // 가진 씨앗 → 개수 (잡화점에서 산다)
 
   // 맵에서 가로로 이어진 밭 칸을 한 줄로 묶고, 시작 밭을 데이터대로 채운다
   init(field) {
@@ -38,7 +39,9 @@ const Farm = {
       p.crop = null;
       done.harvested = true;
     }
-    if (!p.crop && seed) {
+    if (!p.crop && seed && !this.seeds[seed]) msg.push(CROPS[seed].name + ' 씨앗이 없어요');
+    else if (!p.crop && seed) {
+      this.seeds[seed]--;
       p.crop = seed; p.grown = 0;
       msg.push(CROPS[seed].name + ' 심음');
       done.planted = true;

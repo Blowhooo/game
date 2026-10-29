@@ -27,6 +27,13 @@
   #night.on { display: flex; }
   #nightArt { position: static; width: 320px; height: 192px; image-rendering: pixelated; }
   #nightDay { font-size: 14px; opacity: .7; }
+  #store { display: none; position: fixed; inset: 0; background: #1e1a17ee; flex-direction: column; gap: 12px;
+    align-items: center; justify-content: center; z-index: 6; }
+  #store.on { display: flex; }
+  #storeList { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 720px; }
+  #storeList button { min-width: 180px; padding: 8px 12px; line-height: 1.4; }
+  button:disabled { opacity: .4; }
+  #nightNews { color: #ffd76a; }
   #rotate { display: none; position: fixed; inset: 0; background: #1e1a17; align-items: center;
     justify-content: center; font-size: 18px; z-index: 9; }
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
@@ -41,7 +48,8 @@
   <div class="gap"></div>
   <button id="phaseBtn"></button>
 </div>
-<div id="night"><div id="nightDay"></div><canvas id="nightArt" width="80" height="48"></canvas><div id="nightText"></div><button id="nextDay">다음 날</button></div>
+<div id="night"><div id="nightDay"></div><canvas id="nightArt" width="80" height="48"></canvas><div id="nightText"></div><div id="nightNews"></div><button id="nextDay">다음 날</button></div>
+<div id="store"><div id="storeTitle"></div><div id="storeList"></div><button id="storeClose">나가기</button></div>
 <div id="rotate">가로로 돌려 주세요</div>
 
 <!-- 모듈 대신 일반 script: 더블클릭(file://)으로 열려야 해서 -->
@@ -54,11 +62,13 @@
 <script src="data/customers.js"></script>
 <script src="data/day.js"></script>
 <script src="data/nights.js"></script>
+<script src="data/town.js"></script>
 <script src="src/world.js"></script>
 <script src="src/farm.js"></script>
 <script src="src/player.js"></script>
 <script src="src/wife.js"></script>
 <script src="src/shop.js"></script>
+<script src="src/store.js"></script>
 <script src="src/render.js"></script>
 <script src="src/touch.js"></script>
 <script src="src/hud.js"></script>

@@ -28,6 +28,8 @@ const Render = {
     this.ctx.imageSmoothingEnabled = false;
   },
 
+  tileColor(t) { return t.gate && World.opened.has(t.gate) ? t.openColor : t.color; },
+
   // 화면이 남편을 따라가되 맵 밖은 안 보이게. 맵이 더 작으면 가운데
   follow() {
     const T = CONFIG.tile;
@@ -67,7 +69,7 @@ const Render = {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     for (let ty = 0; ty < World.h; ty++)
       for (let tx = 0; tx < World.w; tx++)
-        this.rect(tx * T, ty * T, T, T, World.tile(tx, ty).color);
+        this.rect(tx * T, ty * T, T, T, this.tileColor(World.tile(tx, ty)));
 
     // 할 일 칸 · 긋는 중인 칸 표시
     for (const j of Player.jobs) if (j.act) this.outline(j.tx * T, j.ty * T, T, T, '#fff8');

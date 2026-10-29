@@ -1,5 +1,5 @@
 // 모든 경우의 수: 빈 밭에서 시작해 「작물마다 몇 칸」 조합을 전부 돌려 본다 (→ docs/밸런스.md 4)
-// 걷기에 시간이 안 들어서 칸 위치는 상관없고 칸 수만 중요하다. 쓰는 법: node tools/combos.js [며칠=12]
+// 걷기에 시간이 안 들어서 칸 위치는 상관없고 칸 수만 중요하다. 쓰는 법: node tools/combos.js [며칠=12] [손님 수 바꿔 보기]
 // 전제: 1일째 빈 밭에 다 심고, 캐면 같은 작물을 다시 심는다. 씨앗은 늘 있다(값은 이익에서 뺀다).
 //       손님 메뉴는 작물마다 고르게(손님 수 ÷ 작물 수). 시간이 모자라면 못 캔 것 · 못 심은 것은 다음 날로
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -10,6 +10,7 @@ for (const f of ['config', 'tiles', 'map', 'crops', 'customers', 'day'])
 const { CONFIG, SCENES, TILES, CROPS, CUSTOMERS, DAY } = ctx;
 
 const days = Number(process.argv[2] || 12);
+if (process.argv[3]) CUSTOMERS.perEvening = Number(process.argv[3]);
 const names = Object.keys(CROPS);
 const cost = DAY.day.cost, dayLen = (DAY.day.to - DAY.day.from) * 60;
 const total = SCENES.farm.join('').split('').filter(c => TILES[c]?.plot).length;

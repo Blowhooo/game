@@ -2,6 +2,7 @@ const state = { day: 1, seed: Object.keys(CROPS)[0] };
 
 Input.init();
 World.init();
+Farm.init(TUTORIAL.field);
 Player.init();
 Render.init();
 Hud.init();

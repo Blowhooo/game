@@ -38,8 +38,7 @@ const Render = {
     const T = CONFIG.tile;
     for (let ty = 0; ty < World.h; ty++)
       for (let tx = 0; tx < World.w; tx++) {
-        const t = World.tile(tx, ty), p = Farm.plots[tx + ',' + ty];
-        this.rect(tx * T, ty * T, T, T, p?.wet ? t.wetColor : t.color);
+        this.rect(tx * T, ty * T, T, T, World.tile(tx, ty).color);
       }
 
     const tg = Player.target();

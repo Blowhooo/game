@@ -16,6 +16,6 @@ const Hud = {
     const bag = Object.entries(CROPS).map(([id, c]) => `${c.name} ${Farm.bag[id] || 0}`).join(' · ');
     this.el.innerHTML =
       `<b>${state.day}일째</b> &nbsp; 씨앗: ${seeds} &nbsp; | &nbsp; 가방: ${bag}<br>` +
-      `방향키/WASD 이동 · Space 하기(심기 · 물 · 캐기) · N 하루 넘기기(임시)`;
+      `방향키/WASD 이동 · Space 하기(심기 · 캐기) · N 하루 넘기기(임시)`;
   },
 };

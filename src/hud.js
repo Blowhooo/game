@@ -10,15 +10,20 @@ const Hud = {
       const b = document.createElement('button');
       b.innerHTML = `<small class="key">${i + 1}</small>${c.name}`;
       b.dataset.id = id;
-      b.onclick = () => { state.seed = id; };
+      b.onclick = () => this.pick(state, id);
       seeds.append(b);
     });
     document.getElementById('nextDay').onclick = onNextDay;
     // PC 단축키: 숫자 = 씨앗
     addEventListener('keydown', e => {
       const id = Object.keys(CROPS)[Number(e.key) - 1];
-      if (id) state.seed = id;
+      if (id) this.pick(state, id);
     });
+  },
+  // 씨앗 고르기. 같은 걸 다시 누르면 풀린다
+  pick(state, id) {
+    state.seed = state.seed === id ? null : id;
+    if (state.seed) this.say('바꿀 줄을 누르세요');
   },
   say(text) {
     this.msgEl.textContent = text;

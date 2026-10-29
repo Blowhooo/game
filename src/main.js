@@ -1,4 +1,5 @@
-const state = { day: 1, seed: Object.keys(CROPS)[0] };
+// seed = 작물을 바꾸려고 고른 씨앗(한 번 쓰면 풀림), 평소엔 null
+const state = { day: 1, seed: null };
 
 World.init();
 Farm.init(TUTORIAL.field);
@@ -11,13 +12,33 @@ Hud.init(state, () => {
   Hud.say(state.day + '일째 아침');
 });
 
-// 밭에서 시작했으면 그은 칸마다 일하고, 아니면 마지막 칸으로 걸어가기만
-Touch.onDone = (tiles, fromPlot) => {
-  if (fromPlot) Player.setJobs(tiles.map(t => ({ ...t, act: true })));
-  else Player.setJobs([{ ...tiles[tiles.length - 1], act: false }]);
+// 줄을 누르면 가까운 끝부터 그 줄을 따라 일하고, 밭이 아니면 걸어가기만
+Touch.onTap = t => {
+  const row = Farm.rowAt(t.tx, t.ty);
+  if (!row) {
+    state.seed = null;
+    Player.setJobs([{ ...t, act: false }]);
+    return;
+  }
+  if (state.seed) {
+    Hud.say(Farm.assign(row, state.seed));
+    state.seed = null;
+    if (!Farm.hasWork(row)) return;
+  } else if (!row.crop) {
+    Hud.say('씨앗을 골라 줄을 누르세요');
+    return;
+  } else if (!Farm.hasWork(row)) {
+    const p = Farm.plot(row.tiles[0].tx, row.tiles[0].ty);
+    Hud.say(CROPS[p.crop].name + ' 자라는 중 (' + (CROPS[p.crop].days - p.grown) + '일 남음)');
+    return;
+  }
+  const tiles = [...row.tiles];
+  const near = Math.abs(tiles[0].tx * CONFIG.tile - Player.x) > Math.abs(tiles[tiles.length - 1].tx * CONFIG.tile - Player.x);
+  if (near) tiles.reverse();
+  Player.setJobs(tiles.map(t => ({ ...t, act: true })));
 };
 Player.onArrive = job => {
-  const msg = Farm.act(job.tx, job.ty, state.seed);
+  const msg = Farm.work(job.tx, job.ty);
   if (msg) Hud.say(msg);
 };
 

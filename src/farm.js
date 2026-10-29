@@ -16,8 +16,8 @@ const Farm = {
         this.plots[tx + ',' + ty] = { crop: null, grown: 0 };
       }
     }
-    for (const { row, crop, ripe } of field)
-      for (const t of this.rows[row].tiles)
+    for (const { row, cols, crop, ripe } of field)
+      for (const t of cols.map(i => this.rows[row].tiles[i]))
         Object.assign(this.plot(t.tx, t.ty), { crop, grown: CROPS[crop].days - (ripe ? 0 : 1) });
   },
 

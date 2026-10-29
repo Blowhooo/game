@@ -3,6 +3,7 @@ const World = {
   w: MAP[0].length,
   h: MAP.length,
   start: null,
+  blockers: new Set(),   // 맵 글자 말고도 막힌 칸(사람이 서 있는 자리 등): "x,y"
   init() {
     MAP.forEach((row, y) => {
       const x = row.indexOf('P');
@@ -18,7 +19,7 @@ const World = {
   // 맵 밖도 막힌 칸으로 본다
   isSolid(tx, ty) {
     const t = this.tile(tx, ty);
-    return !t || t.solid;
+    return !t || t.solid || this.blockers.has(tx + ',' + ty);
   },
 
   // 칸 단위 길 찾기(8방향, 대각선은 √2칸, 막힌 칸 모서리는 못 비집음). 시작 칸은 빼고 돌려준다. 못 가면 null
@@ -52,6 +53,18 @@ const World = {
         }
     }
     return null;
+  },
+
+  // 막힌 칸(작업대 등) 옆으로 가는 가장 짧은 길. 옆 칸 { tx, ty }와 길을 돌려준다
+  pathBeside(from, to) {
+    let best = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const t = { tx: to.tx + dx, ty: to.ty + dy };
+      if (this.isSolid(t.tx, t.ty)) continue;
+      const path = t.tx === from.tx && t.ty === from.ty ? [] : this.findPath(from, t);
+      if (path && (!best || path.length < best.path.length)) best = { ...t, path };
+    }
+    return best;
   },
 
   // 두 점(게임 픽셀) 사이 일자로 막힌 칸이 없는가. 몸 폭(r)만큼 양옆도 본다

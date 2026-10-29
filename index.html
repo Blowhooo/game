@@ -11,7 +11,7 @@
   .bar { position: fixed; left: 0; right: 0; display: flex; align-items: center; gap: 8px;
     padding: 8px max(12px, env(safe-area-inset-left)); pointer-events: none; }
   .bar > * { pointer-events: auto; }
-  #top { top: 0; font-size: 14px; text-shadow: 0 1px 2px #000; }
+  #top { top: 0; font-size: 14px; white-space: pre; text-shadow: 0 1px 2px #000, 0 0 4px #000; }
   #bottom { bottom: 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   #seeds { display: flex; gap: 6px; }
   #bottom .gap { flex: 1; pointer-events: none; }
@@ -44,9 +44,11 @@
 <script src="data/map.js"></script>
 <script src="data/crops.js"></script>
 <script src="data/tutorial.js"></script>
+<script src="data/wife.js"></script>
 <script src="src/world.js"></script>
 <script src="src/farm.js"></script>
 <script src="src/player.js"></script>
+<script src="src/wife.js"></script>
 <script src="src/render.js"></script>
 <script src="src/touch.js"></script>
 <script src="src/hud.js"></script>

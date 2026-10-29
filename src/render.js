@@ -69,13 +69,11 @@ const Render = {
       for (let tx = 0; tx < World.w; tx++)
         this.rect(tx * T, ty * T, T, T, World.tile(tx, ty).color);
 
-    // 할 일 칸 표시, 씨앗을 골랐으면 줄마다 노란 테두리(누를 곳)
+    // 할 일 칸 표시, 씨앗을 골랐으면 빈 칸이 있는 줄에 노란 테두리(누를 곳)
     for (const j of Player.jobs) if (j.act) this.outline(j.tx * T, j.ty * T, T, T, '#fff8');
     for (const r of Farm.rows) {
       const a = r.tiles[0], n = r.tiles.length;
-      if (state.seed) this.outline(a.tx * T, a.ty * T, n * T, T, '#ffd76a');
-      // 예약 표시: 줄 왼쪽에 다음 작물 색
-      if (r.next) { this.rect(a.tx * T - 6, a.ty * T + 5, 5, 6, '#2b231d'); this.rect(a.tx * T - 5, a.ty * T + 6, 3, 4, CROPS[r.next].color); }
+      if (state.seed && Farm.rowHas(r, p => !p.crop || Farm.isRipe(p))) this.outline(a.tx * T, a.ty * T, n * T, T, '#ffd76a');
     }
 
     // 바닥(기준점) y가 작은 것부터 (→ docs/아트_규격.md 2 그리는 순서)
@@ -86,7 +84,28 @@ const Render = {
       list.push({ y: ty * T + T - 1, draw: () => this.crop(tx * T, ty * T, p) });
     }
     list.push({ y: Player.y, draw: () => this.player() });
+    list.push({ y: Wife.y, draw: () => this.wife() });
     list.sort((a, b) => a.y - b.y).forEach(o => o.draw());
+
+    // 머리 위: 손질 진행 막대, 말풍선
+    if (Wife.current) {
+      this.rect(Wife.x - 8, Wife.y - 37, 16, 4, '#2b231d');
+      this.rect(Wife.x - 7, Wife.y - 36, 14 * Wife.progress(), 2, CROPS[Wife.current.crop].color);
+    }
+    if (Wife.speech) this.bubble(Wife.x, Wife.y - 40, Wife.speech);
+  },
+
+  // 말풍선. 글자는 기기 픽셀 크기로 그려서 또렷하게
+  bubble(x, y, text) {
+    const ctx = this.ctx, px = Math.round(14 * this.dpr);
+    ctx.font = `${px}px sans-serif`;
+    const w = ctx.measureText(text).width + px, h = px * 1.8;
+    const X = Math.round(x * this.scale) - this.camX - w / 2, Y = Math.round(y * this.scale) - this.camY - h;
+    ctx.fillStyle = '#fff8ec';
+    ctx.fillRect(X, Y, w, h);
+    ctx.fillStyle = '#2b231d';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, X + px / 2, Y + h / 2);
   },
 
   // 임시 작물: 자랄수록 높아지고, 다 자라면 작물 색
@@ -109,5 +128,16 @@ const Render = {
     this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
     const d = DIRS[Player.dir];
     if (Player.dir !== 'up') this.rect(x + 7 + d.dx * 3, y + 8, 2, 2, '#2a1e16');  // 눈
+  },
+
+  // 임시 아내: 치마 + 불러 오는 배, 작업대(오른쪽)를 본다
+  wife() {
+    const x = Wife.x - 8, y = Wife.y - 32;
+    this.rect(Wife.x - 5, Wife.y - 2, 10, 3, '#0003');
+    this.rect(x + 3, y + 14, 10, 17, '#b5536a');             // 몸
+    this.rect(x + 11, y + 19, 3, 6, '#b5536a');              // 배
+    this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
+    this.rect(x + 3, y + 3, 10, 4, '#5a3a22');               // 머리카락
+    this.rect(x + 10, y + 8, 2, 2, '#2a1e16');               // 눈
   },
 };

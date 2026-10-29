@@ -108,35 +108,16 @@ const Render = {
     ctx.fillText(text, X + px / 2, Y + h / 2);
   },
 
-  // 임시 작물: 자랄수록 높아지고 끝에 작물 색, 다 자라면 작물 색 네모. 이름 첫 글자 + 남은 날
+  // 임시 작물: 작물 색으로 구분. 자랄수록 높아지고, 다 자라면 큰 네모
   crop(x, y, p) {
     const c = CROPS[p.crop];
     if (Farm.isRipe(p)) {
       this.rect(x + 3, y + 3, 10, 11, c.color);
       this.rect(x + 3, y + 13, 10, 1, '#0004');
-      this.label(x + 8, y + 9, c.name[0], '#2b231d');
       return;
     }
     const h = 3 + Math.round(7 * p.grown / c.days);
-    this.rect(x + 7, y + 14 - h, 2, h, '#3f8f3a');
-    this.rect(x + 5, y + 14 - h, 6, 3, c.color);
-    this.label(x + 4, y + 4, c.name[0], '#fff8ec');
-    this.label(x + 12, y + 4, String(c.days - p.grown), '#fff8ec');
-  },
-
-  // 칸 위 작은 글자(가운데 정렬). 기기 픽셀 크기로 그려 또렷하게
-  label(x, y, text, color) {
-    const ctx = this.ctx, px = Math.round(this.scale * 5);
-    ctx.font = `bold ${px}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineWidth = Math.max(2, px / 5);
-    ctx.strokeStyle = '#0008';
-    const X = Math.round(x * this.scale) - this.camX, Y = Math.round(y * this.scale) - this.camY;
-    ctx.strokeText(text, X, Y);
-    ctx.fillStyle = color;
-    ctx.fillText(text, X, Y);
-    ctx.textAlign = 'start';
+    this.rect(x + 6, y + 14 - h, 4, h, c.color);
   },
 
   // 임시 남편: 16×32 칸 안의 네모 + 바라보는 쪽 표시

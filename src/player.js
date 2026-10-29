@@ -50,6 +50,12 @@ const Player = {
         this.nextJob();
         return;
       }
+      // 일자로 갈 수 있는 가장 먼 칸까지는 중간 칸을 건너뛴다
+      while (this.path.length > 1) {
+        const far = this.spot(this.path[1].tx, this.path[1].ty);
+        if (!World.clearLine(this.x, this.y, far.x, far.y, 5)) break;
+        this.path.shift();
+      }
       const goal = this.spot(this.path[0].tx, this.path[0].ty);
       const dx = goal.x - this.x, dy = goal.y - this.y, d = Math.hypot(dx, dy);
       // 대각선이면 옆을 본다 (→ docs/기술.md 1 방향)

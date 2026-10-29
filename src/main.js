@@ -1,5 +1,5 @@
 // phase = 'day'(밭) → 'evening'(가게 안 장사) → 'night'(하루 끝). seed = 심으려고 고른 씨앗(한 번 쓰면 풀림)
-const state = { day: 1, phase: 'day', seed: null };
+const state = { day: 1, phase: 'day', t: 0, seed: null };   // t = 지금 단계에서 흐른 실제 초
 
 // 장면 바꾸기: 맵 · 남편 · 아내 자리 · 화면 배율
 function enterScene(scene) {
@@ -17,30 +17,31 @@ Wife.enter('farm');
 Render.init();
 Touch.init(Render.canvas);
 Hud.init(state, {
-  phase() {
-    state.seed = null;
-    if (state.phase === 'day') {
-      state.phase = 'evening';
-      // 가방에 남은 건 가게에 들어가며 아내에게 건넨다
-      const left = Farm.bagCount();
-      if (left) Wife.receive(Farm.bag);
-      enterScene('shop');
-      Shop.start(state.day <= TUTORIAL.days);
-      Wife.say('evening');
-      if (left) Hud.say(`남은 ${left}개는 아내에게 건넴`);
-    } else if (state.phase === 'evening') {
-      endEvening();
-    }
-  },
+  phase() { if (state.phase === 'day') startEvening(); },
   nextDay() {
     Hud.hideNight();
     Farm.newDay();
     state.day++;
     state.phase = 'day';
+    state.t = 0;
     enterScene('farm');
     Hud.say(state.day + '일째 아침');
   },
 });
+
+// 저녁 장사 시작: 시간이 다 됐거나 「일찍 문 열기」
+function startEvening() {
+  state.seed = null;
+  state.phase = 'evening';
+  state.t = 0;
+  // 가방에 남은 건 가게에 들어가며 아내에게 건넨다
+  const left = Farm.bagCount();
+  if (left) Wife.receive(Farm.bag);
+  enterScene('shop');
+  Shop.start(state.day <= TUTORIAL.days);
+  Wife.say('evening');
+  if (left) Hud.say(`남은 ${left}개는 아내에게 건넴`);
+}
 
 function endEvening() {
   // 아직 안 들어온 손님 · 앉아 있는 손님은 그냥 돌아간다
@@ -109,9 +110,12 @@ function loop(now) {
   last = now;
   Player.update(dt);
   Wife.update(dt);
+  // 시간이 다 되면 다음 단계로: 낮 → 저녁 → 하루 끝
+  if (state.phase !== 'night') state.t += dt;
+  if (state.phase === 'day' && state.t >= DAY.day.seconds) startEvening();
   if (state.phase === 'evening') {
     Shop.update(dt);
-    if (Shop.isOver()) endEvening();
+    if (Shop.isOver() || state.t >= DAY.evening.seconds) endEvening();
   }
   Render.frame();
   Hud.update(dt, state);

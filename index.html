@@ -25,6 +25,8 @@
   #night { display: none; position: fixed; inset: 0; background: #0d0b14e6; flex-direction: column; gap: 16px;
     align-items: center; justify-content: center; font-size: 18px; line-height: 1.7; text-align: center; z-index: 5; }
   #night.on { display: flex; }
+  #nightArt { position: static; width: 320px; height: 192px; image-rendering: pixelated; }
+  #nightDay { font-size: 14px; opacity: .7; }
   #rotate { display: none; position: fixed; inset: 0; background: #1e1a17; align-items: center;
     justify-content: center; font-size: 18px; z-index: 9; }
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
@@ -39,7 +41,7 @@
   <div class="gap"></div>
   <button id="phaseBtn"></button>
 </div>
-<div id="night"><div id="nightText"></div><button id="nextDay">다음 날</button></div>
+<div id="night"><div id="nightDay"></div><canvas id="nightArt" width="80" height="48"></canvas><div id="nightText"></div><button id="nextDay">다음 날</button></div>
 <div id="rotate">가로로 돌려 주세요</div>
 
 <!-- 모듈 대신 일반 script: 더블클릭(file://)으로 열려야 해서 -->
@@ -50,6 +52,8 @@
 <script src="data/tutorial.js"></script>
 <script src="data/wife.js"></script>
 <script src="data/customers.js"></script>
+<script src="data/day.js"></script>
+<script src="data/nights.js"></script>
 <script src="src/world.js"></script>
 <script src="src/farm.js"></script>
 <script src="src/player.js"></script>

@@ -9,10 +9,11 @@
   | 주제 | 원본 |
   |---|---|
   | 컨셉 · 느낌 · 세계관 · 핵심 반복 · 시스템 · 목표 · 범위 · 검증할 질문 | `docs/기획.md` |
+  | 숫자를 정하는 원칙(자원 고리 · 두 가지 시간 · 화살표마다 기준) | `docs/밸런스.md` |
   | 격자 · 그림 · 판정 크기 · 누가 무엇을 뽑나 · 그림에 대해 배운 것 | `docs/아트_규격.md` |
   | 만드는 방식 · 코드 원칙 · 이동 · 땅 그리기 · 그림 도구(Retro Diffusion · PixelLab) · 가격 · 키 · 유니티 | `docs/기술.md` |
   | 지금 어디 · 다음 할 일 | 이 파일 「다음에 이어서」 |
-- **`tools/`**: `rd_gen.py`(Retro Diffusion 생성) · `png_to_sprite.py`(PNG → 글자 데이터) · `make_farm_assets.py`(듀얼 그리드 변환 예시). 쓰는 법은 `docs/기술.md` 3
+- **`tools/`**: `rd_gen.py`(Retro Diffusion 생성) · `png_to_sprite.py`(PNG → 글자 데이터) · `make_farm_assets.py`(듀얼 그리드 변환 예시) · `balance.js`(밸런스 점검). 쓰는 법은 `docs/기술.md` 3
 - **예전 아이디어(읽기만)**: `D:\윤준후\imotto_project\projects\02\prototypes\p01-길가식당\concept.md`. 같은 폴더의 시제품 `index.html`은 **쓰지 않는다**(처음부터 새로 설계)
 - **보관 파일**: `D:\ai\game_보관_1029.zip` (워크스페이스 밖) — 기획 전에 만든 테스트들(손그림 · PixelLab 농부, 동작 실험, 뼈대 실험, 밭 테스트). 필요하면 꺼내 봄
 - **`.env`** (깃에 안 올림): PixelLab · Retro Diffusion 키

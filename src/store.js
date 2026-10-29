@@ -1,4 +1,4 @@
-// 동네 가게 화면: 잡화점 = 씨앗 묶음, 대장간 = 도구 (→ data/town.js). 사는 데는 시간이 들지 않는다(걸어가는 데 든다)
+// 동네 가게 화면: 잡화점 = 씨앗 묶음, 대장간 = 도구 (→ data/town.js). 다녀오는 데 낮 시간이 든다(data/day.js store)
 const Store = {
   el: null,
   init() {

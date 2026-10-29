@@ -6,18 +6,13 @@ const ctx = {};
 vm.createContext(ctx);
 for (const f of ['config', 'tiles', 'map', 'crops', 'tutorial', 'customers', 'day', 'town'])
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'data', f + '.js'), 'utf8').replace(/^const /gm, 'var '), ctx);
-const { CONFIG, SCENES, CROPS, TUTORIAL, CUSTOMERS, DAY, TOWN, TOOLS } = ctx;
+const { CONFIG, CROPS, TUTORIAL, CUSTOMERS, DAY, TOWN, TOOLS } = ctx;
 
 const ok = (good, text) => console.log(`${good ? '✓' : '⚠'} ${text}`);
 const names = Object.keys(CROPS);
 const avg = f => names.reduce((a, id) => a + f(CROPS[id]), 0) / names.length;
 const time = min => { const h = 8 + min / 60; return `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`; };
 
-// 맵에서 밭 가운데 ↔ 작업대 거리(칸)
-const farm = SCENES.farm, find = ch => farm.flatMap((r, y) => [...r].map((c, x) => c === ch ? [x, y] : null)).filter(Boolean);
-const plots = find('S'), bench = find('T')[0];
-const fx = plots.reduce((a, p) => a + p[0], 0) / plots.length, fy = plots.reduce((a, p) => a + p[1], 0) / plots.length;
-const benchDist = Math.hypot(fx - bench[0], fy - bench[1]);
 const cost = DAY.day.cost;
 
 console.log('\n[작물끼리 공평하게] 칸 하나가 하루에 버는 돈 = (요리값 − 씨앗값) ÷ 자라는 기간');
@@ -30,12 +25,12 @@ console.log('\n[초반 하루가 꽉 찬다] 첫날 할 일을 다 하면 몇 �
 const ripe = TUTORIAL.field.filter(f => f.ripe).reduce((a, f) => a + f.cols.length, 0);
 const seeds = Object.values(TUTORIAL.start.seeds).reduce((a, n) => a + n, 0);
 const trips = Math.ceil(ripe / CONFIG.bagSize);
-const dayMin = ripe * cost.harvest + seeds * cost.plant + trips * (benchDist * 2 * cost.walk + cost.give) + (ripe + seeds) * cost.walk;
-console.log(`   캐기 ${ripe}칸 · 심기 ${seeds}칸 · 작업대 왕복 ${trips}번 (밭 ↔ 작업대 약 ${benchDist.toFixed(1)}칸)`);
+const dayMin = ripe * cost.harvest + seeds * cost.plant + trips * cost.give;
+console.log(`   캐기 ${ripe}칸 · 심기 ${seeds}칸 · 작업대 왕복 ${trips}번`);
 ok(dayMin >= 6 * 60 && dayMin <= 7 * 60, `약 ${time(dayMin)}에 끝남 (기준 오후 2~3시)`);
 
 console.log('\n[핵심 리듬] 한 번 나르는 시간 ≈ 가방만큼 손질하는 시간');
-const trip = CONFIG.bagSize * cost.harvest + benchDist * 2 * cost.walk + cost.give + CONFIG.bagSize * cost.walk;
+const trip = CONFIG.bagSize * cost.harvest + cost.give;
 const prep = CONFIG.bagSize * avg(c => c.prep) * CONFIG.prepMul;
 ok(Math.abs(trip - prep) / Math.max(trip, prep) <= 0.3, `나르기 약 ${Math.round(trip)}분 · 손질 약 ${Math.round(prep)}분 (차이 30% 안, 추측)`);
 

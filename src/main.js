@@ -120,7 +120,7 @@ const phaseMinutes = phase => (DAY[phase].to - DAY[phase].from) * 60;
 Player.onArrive = job => {
   const cost = DAY.day.cost;
   if (job.give) { Wife.receive(Farm.bag); advance(cost.give); return; }
-  if (job.store) { Store.open(job.store); return; }
+  if (job.store) { advance(cost.store); Store.open(job.store); return; }
   if (job.serve) { const msg = Shop.serve(job.serve); if (msg) Hud.say(msg); return; }
   // 캐기 · 심기는 한 일만큼 시간이 든다
   const done = Farm.work(job.tx, job.ty, job.seed);
@@ -135,15 +135,10 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  // 낮: 걸은 만큼만 시간이 흐른다. 저녁: 실시간 (→ docs/기획.md 4)
-  const x0 = Player.x, y0 = Player.y;
+  // 낮: 행동할 때만 시간이 흐른다(걷기는 0). 저녁: 실시간 (→ docs/기획.md 4)
   Player.update(dt);
   Wife.update(dt);
-  if (state.phase === 'day') {
-    const tiles = Math.hypot(Player.x - x0, Player.y - y0) / CONFIG.tile;
-    if (tiles) advance(tiles * DAY.day.cost.walk);
-    if (state.min >= phaseMinutes('day')) startEvening();
-  }
+  if (state.phase === 'day' && state.min >= phaseMinutes('day')) startEvening();
   if (state.phase === 'evening') {
     advance(dt * phaseMinutes('evening') / DAY.evening.seconds);
     Shop.update(dt);

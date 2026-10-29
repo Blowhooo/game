@@ -23,7 +23,7 @@ const Hud = {
   // 씨앗 고르기. 같은 걸 다시 누르면 풀린다
   pick(state, id) {
     state.seed = state.seed === id ? null : id;
-    if (state.seed) this.say('심을 줄을 누르세요');
+    if (state.seed) this.say('심을 칸을 그으세요');
   },
   say(text) {
     this.msgEl.textContent = text;

@@ -69,12 +69,9 @@ const Render = {
       for (let tx = 0; tx < World.w; tx++)
         this.rect(tx * T, ty * T, T, T, World.tile(tx, ty).color);
 
-    // 할 일 칸 표시, 씨앗을 골랐으면 빈 칸이 있는 줄에 노란 테두리(누를 곳)
+    // 할 일 칸 · 긋는 중인 칸 표시
     for (const j of Player.jobs) if (j.act) this.outline(j.tx * T, j.ty * T, T, T, '#fff8');
-    for (const r of Farm.rows) {
-      const a = r.tiles[0], n = r.tiles.length;
-      if (state.seed && Farm.rowHas(r, p => !p.crop || Farm.isRipe(p))) this.outline(a.tx * T, a.ty * T, n * T, T, '#ffd76a');
-    }
+    if (Touch.fromPlot) for (const t of Touch.tiles) this.outline(t.tx * T, t.ty * T, T, T, '#ffd76a');
 
     // 바닥(기준점) y가 작은 것부터 (→ docs/아트_규격.md 2 그리는 순서)
     const list = [];

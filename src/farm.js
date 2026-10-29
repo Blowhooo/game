@@ -1,4 +1,4 @@
-// 밭. 줄(이랑) 단위로 캐고 심는다. 작물 종류는 모르고 CROPS 데이터만 읽는다
+// 밭. 줄(이랑)로 나뉘고, 칸마다 캐고 심는다. 작물 종류는 모르고 CROPS 데이터만 읽는다
 const Farm = {
   rows: [],    // { tiles: [{tx, ty}] }
   plots: {},   // "x,y" → { crop, grown }
@@ -21,11 +21,9 @@ const Farm = {
   },
 
   plot(tx, ty) { return this.plots[tx + ',' + ty] || null; },
-  rowAt(tx, ty) { return this.rows.find(r => r.tiles.some(t => t.tx === tx && t.ty === ty)) || null; },
   bagCount() { return Object.values(this.bag).reduce((a, n) => a + n, 0); },
   bagFull() { return this.bagCount() >= CONFIG.bagSize; },
   isRipe(p) { return p.crop && p.grown >= CROPS[p.crop].days; },
-  rowHas(row, test) { return row.tiles.some(t => test(this.plot(t.tx, t.ty))); },
 
   // 칸 하나 일: 다 자랐으면 캐고, seed가 있으면 빈 칸에 심는다. 캔 자리는 저절로 다시 심지 않는다
   work(tx, ty, seed) {

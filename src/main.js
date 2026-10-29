@@ -13,40 +13,40 @@ Hud.init(state, () => {
   Hud.say(state.day + '일째 아침');
 });
 
-// 줄을 누르면 가까운 끝부터 그 줄을 따라 일하고, 밭이 아니면 걸어가기만
-Touch.onTap = t => {
+// 씨앗을 골랐으면 그은 칸에 심고, 안 골랐으면 그은 칸을 캔다. 작업대는 건네기, 그 밖은 걸어가기만
+Touch.onDone = (tiles, fromPlot) => {
+  const t = tiles[0];
+  const seed = state.seed;
+  state.seed = null;
   // 작업대: 옆까지 걸어가서 가방을 통째로 건넨다
   if (World.tile(t.tx, t.ty)?.give) {
-    state.seed = null;
     const beside = World.pathBeside(Player.tileNow(), t);
     if (beside) Player.setJobs([{ tx: beside.tx, ty: beside.ty, act: true, give: true }]);
     return;
   }
-  const row = Farm.rowAt(t.tx, t.ty);
-  if (!row) {
-    state.seed = null;
+  if (!fromPlot) {
     Player.setJobs([{ ...t, act: false }]);
     return;
   }
-  // 씨앗을 골랐으면 그 줄의 빈 칸에 심고(가는 길에 다 자란 건 캔다), 안 골랐으면 캐기만
-  const seed = state.seed;
-  state.seed = null;
-  const ripe = Farm.rowHas(row, p => Farm.isRipe(p)), empty = Farm.rowHas(row, p => !p.crop);
-  if (ripe && Farm.bagFull() && !(seed && empty)) {
-    Hud.say('가방이 가득 찼어요 — 작업대에 갖다주세요');
+  // 심기: 그은 순서대로, 자라는 중인 칸은 건너뛴다(다 자란 칸은 캐고 심는다)
+  if (seed) {
+    const todo = tiles.filter(o => { const p = Farm.plot(o.tx, o.ty); return !p.crop || Farm.isRipe(p); });
+    if (!todo.length) { Hud.say('심을 빈 칸이 없어요'); return; }
+    Player.setJobs(todo.map(o => ({ ...o, act: true, seed })));
     return;
   }
-  if (!ripe && !(seed && empty)) {
-    const p = Farm.plot(row.tiles[0].tx, row.tiles[0].ty);
-    if (!p.crop) Hud.say('씨앗을 골라 줄을 누르세요');
+  // 캐기: 그은 칸 중 다 자란 것만, 그은 순서대로
+  const ripe = tiles.filter(o => Farm.isRipe(Farm.plot(o.tx, o.ty)));
+  if (!ripe.length) {
+    const p = Farm.plot(t.tx, t.ty);
+    if (!p.crop) Hud.say('씨앗을 고르고 심을 칸을 그으세요');
     else Hud.say(CROPS[p.crop].name + ' 자라는 중 (' + (CROPS[p.crop].days - p.grown) + '일 남음)');
     return;
   }
-  const tiles = [...row.tiles];
-  const near = Math.abs(tiles[0].tx * CONFIG.tile - Player.x) > Math.abs(tiles[tiles.length - 1].tx * CONFIG.tile - Player.x);
-  if (near) tiles.reverse();
-  Player.setJobs(tiles.map(t => ({ ...t, act: true, seed })));
+  if (Farm.bagFull()) { Hud.say('가방이 가득 찼어요 — 작업대에 갖다주세요'); return; }
+  Player.setJobs(ripe.map(o => ({ ...o, act: true })));
 };
+
 Player.onArrive = job => {
   if (job.give) { Wife.receive(Farm.bag); return; }
   const msg = Farm.work(job.tx, job.ty, job.seed);

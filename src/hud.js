@@ -6,14 +6,19 @@ const Hud = {
     this.topEl = document.getElementById('top');
     this.msgEl = document.getElementById('msg');
     const seeds = document.getElementById('seeds');
-    for (const [id, c] of Object.entries(CROPS)) {
+    Object.entries(CROPS).forEach(([id, c], i) => {
       const b = document.createElement('button');
-      b.textContent = c.name;
+      b.innerHTML = `<small class="key">${i + 1}</small>${c.name}`;
       b.dataset.id = id;
       b.onclick = () => { state.seed = id; };
       seeds.append(b);
-    }
+    });
     document.getElementById('nextDay').onclick = onNextDay;
+    // PC 단축키: 숫자 = 씨앗
+    addEventListener('keydown', e => {
+      const id = Object.keys(CROPS)[Number(e.key) - 1];
+      if (id) state.seed = id;
+    });
   },
   say(text) {
     this.msgEl.textContent = text;

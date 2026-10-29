@@ -17,6 +17,8 @@
   #bottom .gap { flex: 1; pointer-events: none; }
   button { min-width: 56px; min-height: 44px; padding: 0 12px; border: 2px solid #5a4636; border-radius: 8px;
     background: #2b231dcc; color: #f2e8d8; font-size: 15px; }
+  button .key { display: none; margin-right: 4px; opacity: .6; }
+  @media (pointer: fine) { button .key { display: inline; } }
   button.on { border-color: #ffd76a; color: #ffd76a; font-weight: bold; }
   #msg { position: fixed; top: 40px; left: 0; right: 0; text-align: center; color: #ffd76a;
     text-shadow: 0 1px 2px #000; pointer-events: none; }

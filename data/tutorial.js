@@ -6,5 +6,6 @@ const TUTORIAL = {
     { row: 0, crop: 'cabbage', ripe: true },
     { row: 1, crop: 'potato',  ripe: true },
     { row: 2, crop: 'carrot',  ripe: false },
+    // 넷째 줄은 비워 둔다 — 첫날 무엇을 심을지 고르게
   ],
 };

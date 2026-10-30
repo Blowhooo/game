@@ -67,7 +67,7 @@ const Guests = {
     this.earned += price;
     this.served++;
     const opened = Cooking.serve(g.crop);
-    if (opened) { Wife.sayText(opened.line); Hud.say(`새 메뉴: ${opened.name} (${CROPS[opened.crop].name} 요리 값 ${opened.dish})`); }
+    if (opened) { note(`새 메뉴: ${opened.name}`); Wife.sayText(opened.line); Hud.say(`새 메뉴: ${opened.name} (${CROPS[opened.crop].name} 요리 값 ${opened.dish})`); }
     g.done = true;
     World.unblock(g.seat.tx, g.seat.ty);
     g.way = [{ x: g.x, y: this.roadY }];

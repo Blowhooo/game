@@ -36,9 +36,13 @@ const Hud = {
       setTimeout(() => { delete reset.dataset.sure; reset.textContent = '처음부터 다시'; }, 3000);
     };
     document.getElementById('mapBtn').onclick = () => this.toggleMap();
+    document.getElementById('bookBtn').onclick = () => this.openBook(state, 'items');
+    document.getElementById('bookClose').onclick = () => document.getElementById('book').classList.remove('on');
+    for (const t of document.querySelectorAll('#bookTabs button[data-tab]')) t.onclick = () => this.openBook(state, t.dataset.tab);
     // PC 단축키: 숫자 = 씨앗, M = 지도
     addEventListener('keydown', e => {
       if (e.key === 'm' || e.key === 'M') return this.toggleMap();
+      if (e.key === 'b' || e.key === 'B') return this.openBook(state, 'items');
       const id = Object.keys(CROPS).filter(c => !CROPS[c].wild)[Number(e.key) - 1];
       if (id && state.phase === 'day' && seedCrops(state).includes(id)) this.pick(state, id);
     });
@@ -107,6 +111,28 @@ const Hud = {
     show();
     el.classList.add('on');
   },
+  // 수첩: 소지품 · 노트 두 탭. 열 때마다 새로 쓴다
+  openBook(state, tab) {
+    const row = (a, b = '') => `<li><span>${a}</span><b>${b}</b></li>`;
+    const crops = o => Object.entries(CROPS).filter(([id]) => o[id]).map(([id, c]) => row(c.name, o[id] + '개')).join('') || row('없음');
+    let html;
+    if (tab === 'items') {
+      html = `<h3>돈 · 재료</h3><ul>${row('돈', state.money)}${row('나무', Forest.wood)}${row('돌', Forest.stone)}</ul>`
+        + `<h3>가방 ${Farm.bagCount()}/${CONFIG.bagSize}</h3><ul>${crops(Farm.bag)}</ul>`
+        + `<h3>씨앗</h3><ul>${crops(Farm.seeds)}</ul>`
+        + `<h3>도구</h3><ul>${[...state.tools].map(id => row(TOOLS[id].name, TOOLS[id].desc)).join('') || row('없음', '대장간에서 살 수 있어요')}</ul>`;
+    } else {
+      const menus = WIFE.cooking.filter(m => Cooking.served >= m.at), next = Cooking.next();
+      const built = Object.keys(BUILDINGS).filter(id => Build.done(id));
+      html = `<h3>아내의 메뉴</h3><ul>${menus.map(m => row(m.name, '값 ' + m.dish)).join('') || row('아직 없음')}`
+        + row('다음 메뉴까지', next ? `${Cooking.served}/${next.at}그릇` : '다 열림') + '</ul>'
+        + `<h3>지은 것</h3><ul>${built.map(id => row(BUILDINGS[id].name, BUILDINGS[id].desc)).join('') || row('아직 없음')}</ul>`
+        + `<h3>기록</h3><ul>${[...state.log].reverse().map(l => row(`${l.day}일째`, l.text)).join('') || row('아직 없음')}</ul>`;
+    }
+    document.getElementById('bookBody').innerHTML = html;
+    for (const t of document.querySelectorAll('#bookTabs button[data-tab]')) t.classList.toggle('on', t.dataset.tab === tab);
+    document.getElementById('book').classList.add('on');
+  },
   hideNight() { document.getElementById('night').classList.remove('on'); },
 
   // 처음 이틀은 지금 할 일을 한 줄로 알려 준다 — 임시 색 네모라 무엇이 무엇인지 안 보여서
@@ -156,16 +182,12 @@ const Hud = {
     document.getElementById('endBtn').style.visibility = day ? 'visible' : 'hidden';
     document.getElementById('restBtn').style.display = day && state.min === 0 ? '' : 'none';
 
-    const list = o => Object.entries(CROPS).filter(([id]) => o[id]).map(([id, c]) => `${c.name} ${o[id]}`).join(' · ') || '없음';
+    // 위쪽은 자주 보는 것만. 나머지는 수첩(B)
     const buffs = [state.snack && '새참', state.restLeft > 0 && `쉰 덕분 ${state.restLeft}일`].filter(Boolean);
-    const next = Cooking.next();
-    const waiting = Wife.queue.length + (Wife.current ? 1 : 0);
-    const baby = state.born ? `아기 ${state.day - state.born + 1}일째` : `아기 나오기까지 ${Math.max(0, STORY.birth.day - state.day)}일`;
+    const waiting = Wife.queue.length + (Wife.current ? 1 : 0), left = `기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}`;
     this.topEl.textContent = [
-      [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`, `오늘 먹을 것 ${Math.min(state.fed, foodNeed())}/${foodNeed()}`, buffs.join(' · ')].filter(Boolean).join('  |  '),
-      [`가방 ${Farm.bagCount()}/${CONFIG.bagSize}: ${list(Farm.bag)}`, `나무 ${Forest.wood} · 돌 ${Forest.stone}`].join('  |  '),
-      [Wife.resting() ? `아내 — 아기 보며 쉬는 중 · 가게는 ${STORY.name}가 · 기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}` : `아내 — 손질 기다림 ${waiting} · 요리 ${Wife.readyCount()} · 기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}`,
-        next ? `다음 메뉴까지 ${Cooking.served}/${next.at}` : '메뉴 다 열림', state.hero && `${STORY.name}와 함께`, baby].filter(Boolean).join('  |  '),
+      [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`, `오늘 먹을 것 ${Math.min(state.fed, foodNeed())}/${foodNeed()}`, `가방 ${Farm.bagCount()}/${CONFIG.bagSize}`, buffs.join(' · ')].filter(Boolean).join('  |  '),
+      Wife.resting() ? `아내 — 아기 보며 쉬는 중 · 가게는 ${STORY.name}가 · ${left}` : `아내 — 손질 기다림 ${waiting} · 요리 ${Wife.readyCount()} · ${left}`,
     ].join('\n');
   },
 };

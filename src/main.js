@@ -1,10 +1,13 @@
 // phase = 'day'(낮) → 'night'(하루 끝 화면). seed = 심으려고 고른 씨앗(한 번 쓰면 풀림)
 // min = 오늘 흐른 게임 속 분, fed = 오늘 채운 먹을 몫, snack = 오늘 새참 먹었나, restLeft = 쉰 덕분 버프가 남은 날
 // crops = 소식으로 씨앗이 풀린 작물, hero = A가 가게에 남았나, born = 아기가 태어난 날(0 = 아직) (→ data/story.js)
+// log = 수첩의 기록: [{ day, text }]
 const state = {
   day: 1, phase: 'day', min: 0, seed: null, money: TUTORIAL.start.money,
-  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0, hero: false, born: 0,
+  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0, hero: false, born: 0, log: [],
 };
+// 수첩에 남길 일 (→ src/hud.js 수첩)
+const note = text => state.log.push({ day: state.day, text });
 
 World.load(MAP);
 Farm.init(TUTORIAL.field);
@@ -74,7 +77,9 @@ function endDay() {
   // A가 오기 전엔 마을 사람의 A 이야기, 정한 날엔 출산 (→ data/story.js)
   const talk = !state.hero && STORY.talks.find(t => t.day === state.day);
   const birth = !state.born && state.day >= STORY.birth.day;
-  if (birth) state.born = state.day;
+  if (birth) { state.born = state.day; note('아기가 태어났다'); }
+  if (news) note(`손님 소식: ${news.line}`);
+  if (talk) note(`${STORY.people[talk.lines[0][0]].name}에게 A 이야기를 들었다`);
   const night = () => Hud.night(state, summary, news, birth && { text: STORY.born + '<br><br>' + (Build.babyReady() ? STORY.ready : STORY.notReady) });
   if (talk) Hud.story(talk.lines, night); else night();
 }
@@ -105,7 +110,7 @@ function nextDay() {
   Wife.place();
   // 가게를 다 지은 다음 날 아침 A가 나타난다. 장면을 보기 전에 저장해서 다시 열어도 한 번만
   const arrive = !state.hero && Build.done('shop');
-  if (arrive) { state.hero = true; World.block(...STORY.hero.at); }
+  if (arrive) { state.hero = true; World.block(...STORY.hero.at); note('A가 찾아왔다 — 전쟁 영웅은 사실 남편이었다. A가 가게 일을 돕게 됐다'); }
   Save.write();
   Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + Wife.restDays() + 1 && STORY.back) || remind() || state.day + '일째 아침');
   if (arrive) {
@@ -195,7 +200,7 @@ Player.onArrive = job => {
     Hud.say(done.msg);
     if (!done.ok) return;
     advance('build');
-    if (done.finished) { if (job.build === 'shop') Wife.say('built'); return; }
+    if (done.finished) { note(`${BUILDINGS[job.build].name} 완성 — ${BUILDINGS[job.build].desc}`); if (job.build === 'shop') Wife.say('built'); return; }
     // 재료가 있는 동안 제자리에서 이어서 짓는다
     if (state.min < dayMinutes()) { Player.jobs.unshift({ ...job }); Player.pause = 0.4; }
     return;

@@ -6,10 +6,12 @@ window.G = window.G || {};
   const images = {};
 
   // 그림 불러오기: G.img('assets/x.png') 는 바로 Image를 돌려주고, 다 불러지면 그린다.
+  // assets/bundle.js(shared/tools/png_bundle.py)에 같은 이름이 담겨 있으면 그것을 쓴다(3D에 필요)
   G.img = function (src) {
     if (!images[src]) {
       const im = new Image();
-      im.src = src;
+      const name = src.split('/').pop();
+      im.src = (window.IMGDATA && IMGDATA[name]) || src;
       images[src] = im;
     }
     return images[src];

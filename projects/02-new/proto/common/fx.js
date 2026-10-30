@@ -1,7 +1,7 @@
 // 손맛 효과: 떠오르는 숫자 · 튀는 조각 · 화면 흔들림 · 멈칫(맞는 순간 아주 잠깐 멈춤).
 //   G.fx.num(x, y, '12', { color, size })   G.fx.burst(x, y, color, n)
 //   G.fx.shake(세기)   G.fx.stop(초)   G.fx.update(dt) → 멈칫 중이면 false
-//   그릴 때: G.fx.applyShake(ctx) 후 월드, G.fx.draw(ctx)
+//   그릴 때: G.fx.applyShake(ctx) 후 월드, G.fx.draw(ctx[, 월드→화면 함수])
 (function () {
   const F = (G.fx = {});
   let items = [];
@@ -46,21 +46,26 @@
     return true;
   };
 
+  F.shakeOffset = () => (shakeAmt > 0 ? [G.rand(-shakeAmt, shakeAmt), G.rand(-shakeAmt, shakeAmt)] : [0, 0]);
   F.applyShake = function (ctx) {
     if (shakeAmt > 0) ctx.translate(Math.round(G.rand(-shakeAmt, shakeAmt)), Math.round(G.rand(-shakeAmt, shakeAmt)));
   };
 
-  F.draw = function (ctx) {
+  // map: 월드 좌표 → 화면 좌표로 바꾸는 함수(3D에서 씀). 없으면 그대로
+  F.draw = function (ctx, map) {
+    const at = map || ((x, y) => [x, y]);
     for (const p of parts) {
       ctx.globalAlpha = 1 - p.t / p.life;
       ctx.fillStyle = p.color;
-      ctx.fillRect(Math.round(p.x), Math.round(p.y), Math.ceil(p.r), Math.ceil(p.r));
+      const [sx, sy] = at(p.x, p.y);
+      ctx.fillRect(Math.round(sx), Math.round(sy), Math.ceil(p.r), Math.ceil(p.r));
     }
     ctx.globalAlpha = 1;
     for (const it of items) {
       const k = it.t / it.life;
       const pop = k < 0.15 ? 1 + (0.15 - k) * 3 : 1;
-      G.text(ctx, it.str, it.x, it.y - 18 * Math.min(1, k * 2.5), {
+      const [sx, sy] = at(it.x, it.y);
+      G.text(ctx, it.str, sx, sy - 18 * Math.min(1, k * 2.5), {
         align: 'center',
         size: Math.round(it.size * pop),
         color: it.color,

@@ -28,7 +28,11 @@
     };
     // 그림이 아직 안 불러졌으면 불러진 뒤에 그린다
     const imgs = [grass, ...floor, ...deco];
-    const tryDraw = () => (imgs.every((im) => im.complete && im.naturalWidth) ? draw() : setTimeout(tryDraw, 30));
+    const tryDraw = () => {
+      if (!imgs.every((im) => im.complete && im.naturalWidth)) return setTimeout(tryDraw, 30);
+      draw();
+      if (o.onDone) o.onDone(c); // 3D는 다 그린 뒤 질감을 새로 올려야 한다
+    };
     tryDraw();
     return c;
   };

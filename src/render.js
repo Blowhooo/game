@@ -28,20 +28,68 @@ const Render = {
     this.ctx.imageSmoothingEnabled = false;
   },
 
+  // 바닥 위에 덮는 임시 색 네모. 그림이 생긴 것은 없음(null)
   tileColor(t) {
-    if (t.gate && World.opened.has(t.gate)) return t.openColor;
+    if (!t || (t.gate && World.opened.has(t.gate))) return null;
     if (t.build && Build.done(t.build)) return BUILDINGS[t.build].color;
-    return t.color;
+    return t.color || null;
   },
 
-  // 숲에서 딸 것: 나무 = 줄기 + 잎, 바위 = 회색 덩이, 덤불 = 연두 + 열매(오늘 땄으면 열매 없음)
+  // 칸의 바닥 종류. 맵 밖은 가장 가까운 칸을 따른다(가장자리가 끊기지 않게)
+  ground(tx, ty) {
+    const t = World.tile(Math.min(Math.max(tx, 0), World.w - 1), Math.min(Math.max(ty, 0), World.h - 1));
+    if (t?.gate && World.opened.has(t.gate)) return t.openGround;
+    return t?.ground || 'grass';
+  },
+
+  // 글자 데이터 → 그림(처음 한 번 만들어 둠). pal = 바꿔 칠할 색(땄을 때 등)
+  cache: new Map(),
+  sprite(data, pal) {
+    const key = pal ? data.rows.join() + JSON.stringify(pal) : data.rows;
+    if (this.cache.has(key)) return this.cache.get(key);
+    const c = document.createElement('canvas');
+    c.width = data.rows[0].length; c.height = data.rows.length;
+    const g = c.getContext('2d'), colors = { ...data.palette, ...pal };
+    data.rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      g.fillStyle = colors[ch];
+      g.fillRect(x, y, 1, 1);
+    }));
+    this.cache.set(key, c);
+    return c;
+  },
+  // 그림의 (sx, sy, w, h) 부분을 게임 좌표 (x, y)에. 반올림은 rect와 같게
+  draw(img, sx, sy, w, h, x, y) {
+    const s = this.scale;
+    const X = Math.round(x * s) - this.camX, Y = Math.round(y * s) - this.camY;
+    this.ctx.drawImage(img, sx, sy, w, h, X, Y, Math.round((x + w) * s) - this.camX - X, Math.round((y + h) * s) - this.camY - Y);
+  },
+  // 타일셋의 칸 하나. n = 네 모서리 번호(→ tools/art_to_js.py)
+  wang(set, n, x, y) {
+    const T = CONFIG.tile, i = set.corners[n];
+    this.draw(this.sprite(set), (i % set.cols) * T, Math.floor(i / set.cols) * T, T, T, x, y);
+  },
+
+  // 땅: 칸마다 잔디 · 숲 바닥 → 반 칸 밀린 듀얼 그리드로 길 · 밭(→ docs/기술.md 1 땅 그리기). 타일셋의 잔디는 투명이라 밑이 비침
+  floor() {
+    const T = CONFIG.tile, G = SPR_GROUND;
+    for (let ty = 0; ty < World.h; ty++)
+      for (let tx = 0; tx < World.w; tx++)
+        this.draw(this.sprite(this.ground(tx, ty) === 'forest' ? G.forest : G.grass), 0, 0, T, T, tx * T, ty * T);
+    for (let vy = 0; vy <= World.h; vy++)
+      for (let vx = 0; vx <= World.w; vx++)
+        for (const layer of ['path', 'soil']) {
+          const is = (dx, dy) => this.ground(vx + dx, vy + dy) === layer;
+          const n = is(-1, -1) * 8 | is(0, -1) * 4 | is(-1, 0) * 2 | is(0, 0);
+          if (n) this.wang(G[layer], n, vx * T - T / 2, vy * T - T / 2);
+        }
+  },
+
+  // 숲에서 딸 것. 그림 아래 가운데를 칸 아래 가운데에(→ docs/아트_규격.md 2 기준점). 오늘 딴 덤불은 열매 없이
   gatherIcon(kind, x, y, picked) {
-    if (kind === 'wood') { this.rect(x + 6, y + 9, 4, 7, '#6b4a2a'); this.rect(x + 1, y, 14, 11, '#2a5a26'); this.rect(x + 3, y + 1, 6, 3, '#3a7434'); }
-    if (kind === 'stone') { this.rect(x + 2, y + 5, 12, 10, '#8c8c88'); this.rect(x + 4, y + 6, 6, 3, '#b0b0aa'); }
-    if (kind === 'bush') {
-      this.rect(x + 2, y + 5, 12, 10, '#6fbf4a');
-      if (!picked) for (const [dx, dy] of [[4, 7], [9, 9], [6, 12]]) this.rect(x + dx, y + dy, 2, 2, '#e05a5a');
-    }
+    const d = SPR_FOREST[kind], img = this.sprite(d, picked && d.picked);
+    const w = img.width, h = img.height, T = CONFIG.tile;
+    this.draw(img, 0, 0, w, h, x + (T - w) / 2, y + T - h);
   },
 
   // 화면이 남편을 따라가되 맵 밖은 안 보이게. 맵이 더 작으면 가운데
@@ -81,11 +129,11 @@ const Render = {
     this.follow();
     this.ctx.fillStyle = '#1e1a17';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.floor();
     for (let ty = 0; ty < World.h; ty++)
       for (let tx = 0; tx < World.w; tx++) {
-        const t = World.tile(tx, ty);
-        this.rect(tx * T, ty * T, T, T, this.tileColor(t));
-        if (t.gather) this.gatherIcon(t.gather, tx * T, ty * T, Forest.isPicked(tx, ty));
+        const c = this.tileColor(World.tile(tx, ty));
+        if (c) this.rect(tx * T, ty * T, T, T, c);
       }
     this.sites();
 
@@ -100,6 +148,8 @@ const Render = {
       const [tx, ty] = k.split(',').map(Number);
       list.push({ y: ty * T + T - 1, draw: () => this.crop(tx * T, ty * T, p) });
     }
+    for (const { tx, ty } of World.find(t => t?.gather))
+      list.push({ y: ty * T + T - 1, draw: () => this.gatherIcon(World.tile(tx, ty).gather, tx * T, ty * T, Forest.isPicked(tx, ty)) });
     list.push({ y: Player.y, draw: () => this.player() });
     list.push({ y: Wife.y, draw: () => this.wife() });
     for (const g of Guests.list) list.push({ y: g.y, draw: () => this.guest(g) });

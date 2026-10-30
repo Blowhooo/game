@@ -121,19 +121,29 @@ const Hud = {
     return '아내 뒤 가게 터(테두리)를 눌러 지어요 — 나무 · 돌이 있는 만큼 이어서 지어요';
   },
 
-  // 지금 목표: 화면 오른쪽 위에 늘 (→ docs/기획.md 9 — 할 일인 줄 몰랐다)
+  // 미션 칸: 지금 목표를 화면 오른쪽 위에 늘 (→ docs/기획.md 9 — 할 일인 줄 몰랐다). { title, sub, ids: 지을 것들 }
   goal(state) {
-    const step = (id, verb = '') => BUILDINGS[id].name + verb + (Build.done(id) ? ' ✓' : ` ${Build.progress[id] || 0}/${BUILDINGS[id].work}`);
     const baby = Object.keys(BUILDINGS).filter(id => BUILDINGS[id].baby);
-    if (!Build.done('shop')) return `목표: ${step('shop', ' 짓기')}`;
-    if (state.hero && !state.born) return `목표: 아기 맞을 준비 — ${baby.map(id => step(id)).join(' · ')}  (출산까지 ${Math.max(0, STORY.birth.day - state.day)}일)`;
-    if (state.hero && !Build.babyReady()) return `목표: 아기 맞을 준비(마저) — ${baby.map(id => step(id)).join(' · ')}`;
-    if (!Build.done('storage')) return `목표: ${step('storage', ' 짓기')}`;
-    return '';
+    if (!Build.done('shop')) return { title: '아내의 가게 짓기', ids: ['shop'] };
+    if (state.hero && !state.born) return { title: '아기 맞을 준비', sub: `출산까지 ${Math.max(0, STORY.birth.day - state.day)}일`, ids: baby };
+    if (state.hero && !Build.babyReady()) return { title: '아기 맞을 준비(마저)', ids: baby };
+    if (!Build.done('storage')) return { title: '창고 짓기', ids: ['storage'] };
+    return null;
+  },
+  goalHtml(state) {
+    const g = state.phase === 'day' && this.goal(state);
+    if (!g) return '';
+    const item = id => {
+      const b = BUILDINGS[id], done = Build.done(id);
+      return `<li class="${done ? 'done' : ''}">${done ? '✓' : '☐'} ${b.name}${done ? '' : ` <b>${Build.progress[id] || 0}/${b.work}</b> <small>${b.where}</small>`}</li>`;
+    };
+    return `<div class="gt">${g.title}</div>${g.sub ? `<div class="gs">${g.sub}</div>` : ''}<ul>${g.ids.map(item).join('')}</ul>`;
   },
 
   update(dt, state) {
-    document.getElementById('goal').textContent = state.phase === 'day' ? this.goal(state) : '';
+    const goal = document.getElementById('goal'), html = this.goalHtml(state);
+    if (goal.innerHTML !== html) goal.innerHTML = html;
+    goal.style.display = html ? '' : 'none';
     if (this.msgTimer > 0 && (this.msgTimer -= dt) <= 0) this.msgEl.textContent = '';
     document.getElementById('hint').textContent = this.hint(state);
     const day = state.phase === 'day';

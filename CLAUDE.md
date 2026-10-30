@@ -6,7 +6,7 @@
 | 폴더 | 무엇 |
 |---|---|
 | `projects/01-gilga/` | **길가식당** — 첫 게임. 시제품까지 만들고 방향을 다시 생각하며 멈춤(보관). 이어서 볼 땐 그 폴더의 `CLAUDE.md` |
-| `projects/02-new/` | **새 게임** — 다음 세션에서 처음부터 구상. 그 폴더의 `CLAUDE.md` |
+| `projects/02-new/` | **새 게임** — 구상 중(컨셉 후보까지 정리, 맛보기 여럿). 그 폴더의 `CLAUDE.md` |
 | `shared/` | 게임마다 같이 쓰는 것: `docs/그림_도구.md`(그림 도구 · 가격 · 키 · 누가 무엇을 뽑나 · 배운 것) · `tools/`(`rd_gen.py` Retro Diffusion 생성 · `pixellab_sheet.py` PixelLab 캐릭터 → 한 장 그림 · `png_bundle.py` 그림 → JS(3D용) · `png_to_sprite.py` 캐릭터 PNG → 글자 데이터) |
 | `index.html` | GitHub Pages 첫 화면 — 게임 목록 |
 

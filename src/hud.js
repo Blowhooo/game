@@ -72,7 +72,7 @@ const Hud = {
     ]);
   },
   rest(state) {
-    this.show(`${state.day}일째 · 쉬는 날`, RESTS[(state.day - 1) % RESTS.length],
+    this.show(`${state.day}일째 · 쉬는 날`, null,
       [`푹 쉬었다 — 다음 ${DAY.rest.days}일 동안 몸이 가볍고, 아내도 힘이 난다`]);
   },
   hideNight() { document.getElementById('night').classList.remove('on'); },

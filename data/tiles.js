@@ -4,15 +4,15 @@
 // build = 지을 터(→ data/build.js), gate = 그 소식을 들으면 열리는 문(열리면 색 네모 없이 openGround)
 // shop = 누르면 그 가게에 들어간다(door = 서서 사는 자리)
 const TILES = {
-  '.': { name: '잔디',   solid: false },
+  '.': { name: '잔디',   solid: false },                       // 집 · 마을 마당에만
   'S': { name: '밭',     ground: 'soil', solid: false, plot: true },
   'H': { name: '집',     color: '#8a6a52', solid: true },
   'T': { name: '작업대', color: '#d9b27a', solid: true, give: true },
   'c': { name: '자리',   color: '#a8c88a80', solid: false, seat: true },
   'Q': { name: '가게 터', color: '#b8a07a', solid: true, build: 'shop' },
   'q': { name: '창고 터', color: '#b8a07a', solid: true, build: 'storage' },
-  // 숲
-  ',': { name: '숲 바닥', ground: 'forest', solid: false },
+  // 들 · 숲 (바닥은 둘 다 들풀 = 잔디를 어둡게)
+  ',': { name: '들풀',   ground: 'forest', solid: false },
   'R': { name: '나무',   ground: 'forest', solid: true, gather: 'wood' },
   'O': { name: '바위',   ground: 'forest', solid: true, gather: 'stone' },
   '*': { name: '덤불',   ground: 'forest', solid: true, gather: 'bush' },

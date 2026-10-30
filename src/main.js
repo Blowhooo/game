@@ -88,6 +88,13 @@ function rest() {
   Hud.rest(state);
 }
 
+// 아기 맞을 준비가 남았으면 이틀에 한 번 아침에 아내가 한마디 (→ data/story.js remind)
+function remind() {
+  if (!state.hero || state.born || state.day % 2) return null;
+  const id = Object.keys(STORY.remind).find(id => !Build.done(id));
+  return id && `아내: 「${STORY.remind[id]}」`;
+}
+
 function nextDay() {
   Hud.hideNight();
   Farm.newDay();
@@ -100,7 +107,7 @@ function nextDay() {
   const arrive = !state.hero && Build.done('shop');
   if (arrive) { state.hero = true; World.block(...STORY.hero.at); }
   Save.write();
-  Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + Wife.restDays() + 1 && STORY.back) || state.day + '일째 아침');
+  Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + Wife.restDays() + 1 && STORY.back) || remind() || state.day + '일째 아침');
   if (arrive) {
     state.phase = 'story';
     Hud.story(STORY.arrive, () => {

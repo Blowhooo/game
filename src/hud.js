@@ -121,7 +121,19 @@ const Hud = {
     return '아내 뒤 가게 터(테두리)를 눌러 지어요 — 나무 · 돌이 있는 만큼 이어서 지어요';
   },
 
+  // 지금 목표: 화면 오른쪽 위에 늘 (→ docs/기획.md 9 — 할 일인 줄 몰랐다)
+  goal(state) {
+    const step = (id, verb = '') => BUILDINGS[id].name + verb + (Build.done(id) ? ' ✓' : ` ${Build.progress[id] || 0}/${BUILDINGS[id].work}`);
+    const baby = Object.keys(BUILDINGS).filter(id => BUILDINGS[id].baby);
+    if (!Build.done('shop')) return `목표: ${step('shop', ' 짓기')}`;
+    if (state.hero && !state.born) return `목표: 아기 맞을 준비 — ${baby.map(id => step(id)).join(' · ')}  (출산까지 ${Math.max(0, STORY.birth.day - state.day)}일)`;
+    if (state.hero && !Build.babyReady()) return `목표: 아기 맞을 준비(마저) — ${baby.map(id => step(id)).join(' · ')}`;
+    if (!Build.done('storage')) return `목표: ${step('storage', ' 짓기')}`;
+    return '';
+  },
+
   update(dt, state) {
+    document.getElementById('goal').textContent = state.phase === 'day' ? this.goal(state) : '';
     if (this.msgTimer > 0 && (this.msgTimer -= dt) <= 0) this.msgEl.textContent = '';
     document.getElementById('hint').textContent = this.hint(state);
     const day = state.phase === 'day';

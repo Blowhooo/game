@@ -52,18 +52,19 @@ const Hud = {
     this.msgTimer = 2.5;
   },
 
-  // 밤 화면: 그림 + 글 + 아래 줄들
+  // 밤 화면: (장면이 있으면 그림 + 글) + 아래 줄들
   show(title, scene, lines) {
     document.getElementById('nightDay').textContent = title;
     document.getElementById('nightNews').innerHTML = lines.filter(Boolean).join('<br>');
-    document.getElementById('nightText').innerHTML = scene.text;
-    const ctx = document.getElementById('nightArt').getContext('2d');
-    for (const [x, y, w, h, c] of scene.art) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+    document.getElementById('nightText').innerHTML = scene ? scene.text : '';
+    const art = document.getElementById('nightArt'), ctx = art.getContext('2d');
+    art.style.display = scene ? '' : 'none';
+    if (scene) for (const [x, y, w, h, c] of scene.art) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
     document.getElementById('night').classList.add('on');
   },
-  // 하루를 마치는 장면: 날마다 돌아가며 하나 (→ docs/기획.md 4). news = 오늘 손님이 알려 준 소식(있으면)
+  // 하루 끝: 장면 없이 오늘 결과만 (→ docs/기획.md 4). news = 오늘 손님이 알려 준 소식(있으면)
   night(state, s, news) {
-    this.show(`${state.day}일째 끝 · 손님 ${s.served}명 · 번 돈 ${s.earned}`, NIGHTS[(state.day - 1) % NIGHTS.length], [
+    this.show(`${state.day}일째 끝 · 손님 ${s.served}명 · 번 돈 ${s.earned}`, null, [
       s.left && (s.keep ? `남은 재료 ${s.left}개는 창고에` : `남은 재료 ${s.left}개 (창고가 있으면 내일까지 둘 수 있어요)`),
       news && `손님이 말했다: ${news.line}`,
       news?.opens && `${TOWN.shops[news.opens].name} 가는 문이 열렸다`,

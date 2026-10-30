@@ -77,7 +77,7 @@ for (let day = 1; day <= days; day++) {
     }
   }
 
-  // 3. 빈 칸만큼 씨앗이 모자라면 잡화점에 다녀온다 — 작물이 고르게 섞이도록 적은 것부터
+  // 3. 빈 칸만큼 씨앗이 모자라면 종묘상에 다녀온다 — 작물이 고르게 섞이도록 적은 것부터
   const empty = () => plots.filter(p => !p.crop);
   const have = () => names.reduce((a, id) => a + (s.seeds[id] || 0), 0);
   if (s.opened.has('general') && empty().length > have()) {

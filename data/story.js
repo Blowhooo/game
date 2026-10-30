@@ -14,7 +14,7 @@ const STORY = {
     wife:    { name: '아내', color: '#b5536a' },
     hero:    { name: 'A', color: '#e8c860' },
     passer:  { name: '지나가던 사람', color: '#7a8fb5' },
-    general: { name: '잡화점 주인', color: '#a8b06a' },
+    general: { name: '종묘상 주인', color: '#a8b06a' },
     smith:   { name: '대장장이', color: '#8a8a96' },
   },
   talks: [

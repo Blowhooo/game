@@ -24,8 +24,8 @@ const TILES = {
   '|': { name: '울타리', color: '#5e4630', solid: true },
   'X': { name: '닫힌 문', color: '#8a3a2a', solid: true, gate: 'general', openGround: 'path' },
   'Y': { name: '닫힌 문', color: '#8a3a2a', solid: true, gate: 'smith',   openGround: 'path' },
-  'G': { name: '잡화점', color: '#a8b06a', solid: true, shop: 'general' },
-  'g': { name: '잡화점 문', color: '#5a6030', solid: true, shop: 'general', door: true },
+  'G': { name: '종묘상', color: '#a8b06a', solid: true, shop: 'general' },
+  'g': { name: '종묘상 문', color: '#5a6030', solid: true, shop: 'general', door: true },
   'M': { name: '대장간', color: '#8a8a96', solid: true, shop: 'smith' },
   'm': { name: '대장간 문', color: '#45454e', solid: true, shop: 'smith', door: true },
 };

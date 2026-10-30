@@ -28,8 +28,10 @@ const Hud = {
     document.getElementById('restBtn').onclick = on.rest;
     document.getElementById('nextDay').onclick = on.nextDay;
     document.getElementById('resetBtn').onclick = on.reset;
-    // PC 단축키: 숫자 = 씨앗
+    document.getElementById('mapBtn').onclick = () => this.toggleMap();
+    // PC 단축키: 숫자 = 씨앗, M = 지도
     addEventListener('keydown', e => {
+      if (e.key === 'm' || e.key === 'M') return this.toggleMap();
       const id = Object.keys(CROPS).filter(c => !CROPS[c].wild)[Number(e.key) - 1];
       if (id && state.phase === 'day' && seedCrops(state).includes(id)) this.pick(state, id);
     });
@@ -38,6 +40,12 @@ const Hud = {
   pick(state, id) {
     state.seed = state.seed === id ? null : id;
     if (state.seed) this.say('심을 칸을 그으세요');
+  },
+  // 전체 지도: 보기만 한다(누른 곳으로 가지 않음). 시간은 그대로 흐른다
+  toggleMap() {
+    Render.mapOpen = !Render.mapOpen;
+    document.getElementById('mapBtn').classList.toggle('on', Render.mapOpen);
+    document.getElementById('mapKey').style.display = Render.mapOpen ? '' : 'none';
   },
   say(text) {
     this.msgEl.textContent = text;

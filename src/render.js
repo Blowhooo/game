@@ -4,6 +4,7 @@ const Render = {
   dpr: 1, scale: 1,           // scale = 게임 픽셀 하나가 화면(기기) 픽셀 몇 개인지
   viewW: 0, viewH: 0,         // 화면에 보이는 넓이(게임 픽셀)
   camX: 0, camY: 0,           // 화면 왼쪽 위(기기 픽셀)
+  mapOpen: false,             // 전체 지도: 맵 전체를 화면에 맞춰 그리고 사람은 점으로
 
   init() {
     this.canvas = document.getElementById('game');
@@ -124,9 +125,25 @@ const Render = {
     this.ctx.strokeRect(x * s - this.camX + lw / 2, y * s - this.camY + lw / 2, w * s - lw, h * s - lw);
   },
 
+  // 전체 지도용 배율(정수가 아니어도 됨 — 한눈에 보는 용도) · 맵을 화면 가운데에
+  fitAll() {
+    const T = CONFIG.tile, W = this.canvas.width, H = this.canvas.height;
+    this.scale = Math.min(W / (World.w * T), H / (World.h * T)) * 0.9;
+    this.camX = -Math.round((W - World.w * T * this.scale) / 2);
+    this.camY = -Math.round((H - World.h * T * this.scale) / 2);
+  },
+  // 지도 위 사람 점: 크기는 기기 픽셀로 고정(작은 지도에서도 보이게)
+  dot(x, y, color) {
+    const r = Math.round(5 * this.dpr), ctx = this.ctx;
+    ctx.beginPath();
+    ctx.arc(Math.round(x * this.scale) - this.camX, Math.round(y * this.scale) - this.camY - r, r, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.lineWidth = Math.max(1, Math.round(this.dpr)); ctx.strokeStyle = '#1e1a17'; ctx.stroke();
+  },
+
   frame() {
-    const T = CONFIG.tile;
-    this.follow();
+    const T = CONFIG.tile, keep = this.scale;
+    if (this.mapOpen) this.fitAll(); else this.follow();
     this.ctx.fillStyle = '#1e1a17';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.floor();
@@ -164,7 +181,13 @@ const Render = {
       this.rect(Wife.x - 8, Wife.y - 37, 16, 4, '#2b231d');
       this.rect(Wife.x - 7, Wife.y - 36, 14 * Wife.progress(), 2, CROPS[Wife.current.crop].color);
     }
-    if (Wife.speech) this.bubble(Wife.x, Wife.y - 40, Wife.speech);
+    if (Wife.speech && !this.mapOpen) this.bubble(Wife.x, Wife.y - 40, Wife.speech);
+    if (this.mapOpen) {
+      for (const g of Guests.list) this.dot(g.x, g.y, '#ffd76a');
+      this.dot(Wife.x, Wife.y, '#f2a8c0');
+      this.dot(Player.x, Player.y, '#7fb2ff');
+    }
+    this.scale = keep;
   },
 
   // 말풍선. 글자는 기기 픽셀 크기로 그려서 또렷하게

@@ -8,6 +8,7 @@ const Touch = {
   init(canvas) {
     canvas.addEventListener('pointerdown', e => {
       if (this.id !== null) return;
+      if (Render.mapOpen) return Hud.toggleMap();   // 지도가 열려 있으면 누르면 닫기만
       this.id = e.pointerId;
       canvas.setPointerCapture(e.pointerId);
       const t = Render.toTile(e.clientX, e.clientY);

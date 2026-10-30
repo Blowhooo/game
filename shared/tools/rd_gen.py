@@ -1,15 +1,17 @@
 """Retro Diffusion 생성(텍스트 → 그림)을 API로 직접 부르고 결과를 저장. 키는 .env의 RETRODIFFUSION_API_KEY.
-python tools/rd_gen.py 출력.png '{"prompt": "...", "prompt_style": "...", "width": 32, "height": 32}'
+python shared/tools/rd_gen.py 출력.png '{"prompt": "...", "prompt_style": "...", "width": 32, "height": 32}'
   - 그림이 여러 장이면 출력_0.png, 출력_1.png …  · 함께 오는 데이터(타일셋 배치 등)는 출력.json
   - "check_cost": true 를 넣으면 가격만 보고 끝(무료)
 """
-import base64, json, sys, time, uuid, urllib.request
+import base64, json, os, sys, time, uuid, urllib.request
 
 URL = 'https://api.retrodiffusion.ai/v2/inferences'
 
 
 def key():
-    for line in open('.env', encoding='utf-8'):
+    # .env는 저장소 맨 위(이 파일에서 두 단계 위) — 어느 폴더에서 돌려도 찾게
+    env = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '.env')
+    for line in open(env, encoding='utf-8'):
         if line.startswith('RETRODIFFUSION_API_KEY='):
             return line.split('=', 1)[1].strip()
     sys.exit('.env에 RETRODIFFUSION_API_KEY 없음')

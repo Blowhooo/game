@@ -1,4 +1,4 @@
 .env
 __pycache__/
 *.pyc
-art/raw/*.json
+projects/01-gilga/art/raw/*.json

@@ -1,6 +1,6 @@
 """PixelLab PNG → 우리 글자 데이터(32x32).
 줄이기(칸마다 가장 많은 색) → Resurrect 64에서 가장 가까운 색 → 외곽선 규칙대로 다시 긋기(오른쪽 · 아래 #2e222f, 왼쪽 · 위는 그 색을 어둡게).
-python tools/png_to_sprite.py 입력.png [키(픽셀), 기본 27]  → {"palette": {...}, "rows": [...]} JSON 출력"""
+python shared/tools/png_to_sprite.py 입력.png [키(픽셀), 기본 27]  → {"palette": {...}, "rows": [...]} JSON 출력"""
 import json, sys
 from collections import Counter
 from PIL import Image

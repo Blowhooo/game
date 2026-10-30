@@ -161,7 +161,12 @@ const Hud = {
     if (!g) return '';
     const item = id => {
       const b = BUILDINGS[id], done = Build.done(id);
-      return `<li class="${done ? 'done' : ''}">${done ? '✓' : '☐'} ${b.name}${done ? '' : ` <b>${Build.progress[id] || 0}/${b.work}</b> <small>${b.where}</small>`}</li>`;
+      if (done) return `<li class="done">✓ ${b.name}</li>`;
+      // 남은 재료: 가진 게 모자라면 붉게
+      const left = Build.left(id), have = { wood: Forest.wood, stone: Forest.stone };
+      const mats = [['wood', '나무'], ['stone', '돌']].filter(([k]) => left[k])
+        .map(([k, n]) => `<i class="${have[k] < left[k] ? 'lack' : ''}">${n} ${left[k]}</i>`).join(' · ');
+      return `<li>☐ ${b.name} <b>${Build.progress[id] || 0}/${b.work}</b> <small>${b.where}</small>${mats ? `<div class="mats">필요: ${mats}</div>` : ''}</li>`;
     };
     return `<div class="gt">${g.title}</div>${g.sub ? `<div class="gs">${g.sub}</div>` : ''}<ul>${g.ids.map(item).join('')}</ul>`;
   },

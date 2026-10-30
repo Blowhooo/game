@@ -18,6 +18,11 @@ const Build = {
   },
 
   // n번째 짓기에 드는 재료: 전체를 짓기 횟수로 고르게 나눈다
+  // 다 짓기까지 남은 재료 (짓기마다 쓰는 양은 need)
+  left(id) {
+    const b = BUILDINGS[id], used = total => Math.ceil(total * (this.progress[id] || 0) / b.work);
+    return { wood: b.wood - used(b.wood), stone: b.stone - used(b.stone) };
+  },
   need(id) {
     const b = BUILDINGS[id], i = this.progress[id] || 0;
     const part = total => Math.ceil(total * (i + 1) / b.work) - Math.ceil(total * i / b.work);

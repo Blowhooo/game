@@ -9,7 +9,8 @@ const state = {
 World.load(MAP);
 Farm.init(TUTORIAL.field);
 Object.assign(Farm.seeds, TUTORIAL.start.seeds);
-const loaded = !location.search.includes('new') && Save.read();
+const testing = location.search.includes('test');
+const loaded = !location.search.includes('new') && !testing && Save.read();
 Store.init();
 Player.init();
 Wife.init();
@@ -25,6 +26,17 @@ Hud.init(state, {
 });
 if (!loaded) Save.write();
 Hud.say(loaded ? `${state.day}일째 아침부터 이어서` : '1일째 아침');
+// 시험용 시작: 전날 밤까지 해 둔 것으로 하고 다음 날 아침으로 → A가 온다. 주소의 ?test는 지워서 다시 열면 이어서
+if (testing) {
+  const t = TUTORIAL.test;
+  Object.assign(state, { day: t.day - 1, money: t.money });
+  Object.assign(Farm.seeds, t.seeds);
+  Cooking.served = t.served;
+  for (const id of Object.keys(BUILDINGS)) Build.progress[id] = BUILDINGS[id].work;
+  for (const n of TOWN.news) { if (n.opens) World.opened.add(n.opens); if (n.crop) state.crops.add(n.crop); }
+  history.replaceState(null, '', location.pathname);
+  nextDay();
+}
 
 // 행동마다 드는 분: 새참 · 쉰 덕분이면 빨라진다
 function costOf(kind) {

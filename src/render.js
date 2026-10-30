@@ -21,7 +21,8 @@ const Render = {
     this.canvas.style.width = innerWidth + 'px';
     this.canvas.style.height = innerHeight + 'px';
     const fit = Math.floor(Math.min(W / (World.w * T), H / (World.h * T)));
-    const finger = Math.ceil(CONFIG.minTilePx * this.dpr / T);
+    const px = +new URLSearchParams(location.search).get('px') || CONFIG.minTilePx;  // ?px=32 로 칸 크기 시험
+    const finger = Math.ceil(px * this.dpr / T);
     this.scale = Math.max(1, fit, finger);
     this.viewW = W / this.scale;
     this.viewH = H / this.scale;

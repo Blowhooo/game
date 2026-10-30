@@ -191,7 +191,7 @@ const Hud = {
     const buffs = [state.snack && '새참', state.restLeft > 0 && `쉰 덕분 ${state.restLeft}일`].filter(Boolean);
     const waiting = Wife.queue.length + (Wife.current ? 1 : 0), left = `기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}`;
     this.topEl.textContent = [
-      [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`, `오늘 먹을 것 ${Math.min(state.fed, foodNeed())}/${foodNeed()}`, `가방 ${Farm.bagCount()}/${CONFIG.bagSize}`, buffs.join(' · ')].filter(Boolean).join('  |  '),
+      [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`, `오늘 먹을 것 ${Math.min(state.fed, foodNeed())}/${foodNeed()}`, `가방 ${Farm.bagCount()}/${CONFIG.bagSize}`, `나무 ${Forest.wood} · 돌 ${Forest.stone}`, buffs.join(' · ')].filter(Boolean).join('  |  '),
       Wife.resting() ? `아내 — 아기 보며 쉬는 중 · 가게는 ${STORY.name}가 · ${left}` : `아내 — 손질 기다림 ${waiting} · 요리 ${Wife.readyCount()} · ${left}`,
     ].join('\n');
   },

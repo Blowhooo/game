@@ -27,7 +27,14 @@ const Hud = {
     document.getElementById('endBtn').onclick = on.endDay;
     document.getElementById('restBtn').onclick = on.rest;
     document.getElementById('nextDay').onclick = on.nextDay;
-    document.getElementById('resetBtn').onclick = on.reset;
+    // 처음부터: 잘못 누르지 않게 한 번 더 눌러야 지운다
+    const reset = document.getElementById('resetBtn');
+    reset.onclick = () => {
+      if (reset.dataset.sure) return on.reset();
+      reset.dataset.sure = 1;
+      reset.textContent = '정말 지울까요? 한 번 더 누르면 처음부터';
+      setTimeout(() => { delete reset.dataset.sure; reset.textContent = '처음부터 다시'; }, 3000);
+    };
     document.getElementById('mapBtn').onclick = () => this.toggleMap();
     // PC 단축키: 숫자 = 씨앗, M = 지도
     addEventListener('keydown', e => {

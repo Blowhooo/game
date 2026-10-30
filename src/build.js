@@ -8,6 +8,7 @@ const Build = {
   effect(key) {
     return Object.keys(BUILDINGS).filter(id => this.done(id)).reduce((a, id) => {
       const v = BUILDINGS[id].effect[key];
+      if (v === undefined) return a;   // 이 건물엔 그 효과가 없음
       return typeof v === 'number' ? (a || 0) + v : a || v;
     }, 0);
   },

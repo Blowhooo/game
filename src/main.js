@@ -32,7 +32,7 @@ if (testing) {
   Object.assign(state, { day: t.day - 1, money: t.money });
   Object.assign(Farm.seeds, t.seeds);
   Cooking.served = t.served;
-  for (const id of Object.keys(BUILDINGS)) Build.progress[id] = BUILDINGS[id].work;
+  for (const id of t.built) Build.progress[id] = BUILDINGS[id].work;
   for (const n of TOWN.news) { if (n.opens) World.opened.add(n.opens); if (n.crop) state.crops.add(n.crop); }
   history.replaceState(null, '', location.pathname);
   nextDay();
@@ -41,7 +41,7 @@ if (testing) {
 // 행동마다 드는 분: 새참 · 쉰 덕분이면 빨라진다
 function costOf(kind) {
   let m = DAY.cost[kind];
-  if (state.snack) m *= DAY.snack.mul;
+  if (state.snack) m *= DAY.snack.mul - Build.effect('snack');
   if (state.restLeft > 0) m *= DAY.rest.mul;
   return Math.round(m);
 }
@@ -75,7 +75,7 @@ function endDay() {
   const talk = !state.hero && STORY.talks.find(t => t.day === state.day);
   const birth = !state.born && state.day >= STORY.birth.day;
   if (birth) state.born = state.day;
-  const night = () => Hud.night(state, summary, news, birth && { text: STORY.born });
+  const night = () => Hud.night(state, summary, news, birth && { text: STORY.born + '<br><br>' + (Build.babyReady() ? STORY.ready : STORY.notReady) });
   if (talk) Hud.story(talk.lines, night); else night();
 }
 
@@ -100,7 +100,7 @@ function nextDay() {
   const arrive = !state.hero && Build.done('shop');
   if (arrive) { state.hero = true; World.block(...STORY.hero.at); }
   Save.write();
-  Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + STORY.birth.rest + 1 && STORY.back) || state.day + '일째 아침');
+  Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + Wife.restDays() + 1 && STORY.back) || state.day + '일째 아침');
   if (arrive) {
     state.phase = 'story';
     Hud.story(STORY.arrive, () => {
@@ -133,7 +133,7 @@ Touch.onDone = (tiles, fromPlot) => {
   }
   if (tile?.give || (t.tx === wx && t.ty === wy)) return goBeside({ give: true });
   if (tile?.gather) return goBeside({ gather: t });
-  if (tile?.build) {
+  if (tile?.build && Build.open(tile.build)) {
     if (Build.done(tile.build)) { Hud.say(`${BUILDINGS[tile.build].name} — ${BUILDINGS[tile.build].desc}`); return; }
     return goBeside({ build: tile.build }, World.find(o => o?.build === tile.build));
   }

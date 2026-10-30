@@ -3,6 +3,10 @@ const Build = {
   progress: {},   // 지을 것 → 짓기 몇 번 했나
 
   done(id) { return (this.progress[id] || 0) >= BUILDINGS[id].work; },
+  // 터가 나타났나: after가 있으면 그걸 다 지은 뒤부터
+  open(id) { const a = BUILDINGS[id].after; return !a || this.done(a); },
+  // 아기 맞을 준비를 다 했나
+  babyReady() { return Object.keys(BUILDINGS).filter(id => BUILDINGS[id].baby).every(id => this.done(id)); },
   ratio(id) { return Math.min(1, (this.progress[id] || 0) / BUILDINGS[id].work); },
   // 지은 것들의 효과를 합친 값 (예: energy)
   effect(key) {

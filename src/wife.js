@@ -14,7 +14,8 @@ const Wife = {
   },
   // 서 있는 곳: 출산 뒤 쉬는 동안엔 집 앞(→ data/story.js birth)
   place() { Object.assign(this, Player.spot(...(this.resting() ? STORY.birth.at : WIFE.at))); },
-  resting() { return state.born && state.day > state.born && state.day <= state.born + STORY.birth.rest; },
+  resting() { return state.born && state.day > state.born && state.day <= state.born + this.restDays(); },
+  restDays() { return STORY.birth.rest - Build.effect('restLess'); },   // 아기방을 지으면 줄어듦
   // 배가 불러 오며 줄어드는 기력. 출산하면 없어진다
   heavy() { return state.born ? 0 : Math.max(0, Math.min(STORY.pregnant.max, state.day - STORY.pregnant.from + 1)); },
 
@@ -29,7 +30,8 @@ const Wife = {
   energy() {
     const hero = state.hero ? STORY.hero.energy : 0;
     if (this.resting()) return hero;
-    return WIFE.energy + Build.effect('energy') + (state.restLeft > 0 ? DAY.rest.energy : 0) + hero - this.heavy();
+    const baby = state.born ? Build.effect('babyEnergy') : 0;   // 요람: 아기가 잘 자서
+    return WIFE.energy + Build.effect('energy') + (state.restLeft > 0 ? DAY.rest.energy : 0) + hero + baby - this.heavy();
   },
   tired() { return this.sold >= this.energy(); },
   readyCount() { return Object.values(this.ready).reduce((a, n) => a + n, 0); },

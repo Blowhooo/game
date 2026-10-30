@@ -29,6 +29,7 @@ const World = {
   isSolid(tx, ty) {
     const t = this.tile(tx, ty);
     if (t?.gate && this.opened.has(t.gate)) return false;
+    if (t?.build && !Build.open(t.build)) return false;   // 아직 안 나타난 터는 그냥 마당
     return !t || t.solid || this.blockers.has(tx + ',' + ty);
   },
   // 조건에 맞는 칸들

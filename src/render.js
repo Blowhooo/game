@@ -33,6 +33,7 @@ const Render = {
   // 바닥 위에 덮는 임시 색 네모. 그림이 생긴 것은 없음(null)
   tileColor(t) {
     if (!t || (t.gate && World.opened.has(t.gate))) return null;
+    if (t.build && !Build.open(t.build)) return null;
     if (t.build && Build.done(t.build)) return BUILDINGS[t.build].color;
     return t.color || null;
   },
@@ -252,7 +253,7 @@ const Render = {
   sites() {
     const T = CONFIG.tile;
     for (const id of Object.keys(BUILDINGS)) {
-      if (Build.done(id)) continue;
+      if (Build.done(id) || !Build.open(id)) continue;
       const tiles = World.find(t => t?.build === id);
       if (!tiles.length) continue;
       const x0 = Math.min(...tiles.map(t => t.tx)) * T, x1 = (Math.max(...tiles.map(t => t.tx)) + 1) * T;

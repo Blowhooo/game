@@ -11,6 +11,9 @@ const TILES = {
   'c': { name: '자리',   color: '#a8c88a80', solid: false, seat: true },
   'Q': { name: '가게 터', color: '#b8a07a', solid: true, build: 'shop' },
   'q': { name: '창고 터', color: '#b8a07a', solid: true, build: 'storage' },
+  'n': { name: '아기방 터', color: '#b8a07a', solid: true, build: 'nursery' },
+  'b': { name: '요람 터',   color: '#b8a07a', solid: true, build: 'cradle' },
+  'u': { name: '빨래터 터', color: '#b8a07a', solid: true, build: 'washing' },
   // 들 · 숲 (바닥은 둘 다 들풀 = 잔디를 어둡게)
   ',': { name: '들풀',   ground: 'forest', solid: false },
   'R': { name: '나무',   ground: 'forest', solid: true, gather: 'wood' },

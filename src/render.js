@@ -269,8 +269,8 @@ const Render = {
     const x = Wife.x - 8, y = Wife.y - 32;
     this.rect(Wife.x - 5, Wife.y - 2, 10, 3, '#0003');
     this.rect(x + 3, y + 14, 10, 17, '#b5536a');             // 몸
-    // 배: 출산 날에 가까울수록 불러 온다. 태어난 뒤엔 등에 아기
-    if (!state.born) { const b = 1 + Math.round(3 * Math.min(1, state.day / STORY.birth.day)); this.rect(x + 3 - b, y + 19, b, 6, '#b5536a'); }
+    // 배: A가 온 뒤(미션 2)엔 더 불러 있다. 태어난 뒤엔 등에 아기
+    if (!state.born) { const b = state.hero ? 4 : 2; this.rect(x + 3 - b, y + 19, b, 6, '#b5536a'); }
     else { this.rect(x + 10, y + 15, 5, 7, '#f2e6c8'); this.rect(x + 11, y + 12, 4, 4, '#f0c9a0'); }
     this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
     this.rect(x + 3, y + 3, 10, 4, '#5a3a22');               // 머리카락

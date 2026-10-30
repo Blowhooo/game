@@ -147,18 +147,16 @@ const Hud = {
     return '아내 뒤 가게 터(테두리)를 눌러 지어요 — 나무 · 돌이 있는 만큼 이어서 지어요';
   },
 
-  // 미션 칸: 지금 목표를 화면 오른쪽 위에 늘 (→ docs/기획.md 9 — 할 일인 줄 몰랐다). { title, sub, ids: 지을 것들 }
+  // 미션 칸: 메인 미션(끝내면 다음 이야기) + 곁 미션(창고)을 화면 오른쪽 위에 늘 (→ docs/기획.md 6 · 9). { title, sub, ids: 지을 것들 }
   goal(state) {
-    const baby = Object.keys(BUILDINGS).filter(id => BUILDINGS[id].baby);
     if (!Build.done('shop')) return { title: '아내의 가게 짓기', ids: ['shop'] };
-    if (state.hero && !state.born) return { title: '아기 맞을 준비', sub: `출산까지 ${Math.max(0, STORY.birth.day - state.day)}일`, ids: baby };
-    if (state.hero && !Build.babyReady()) return { title: '아기 맞을 준비(마저)', ids: baby };
-    if (!Build.done('storage')) return { title: '창고 짓기', ids: ['storage'] };
+    if (!state.born) return { title: '아기 맞을 준비', sub: '다 지으면 아기가 와요', ids: Object.keys(BUILDINGS).filter(id => BUILDINGS[id].baby) };
     return null;
   },
   goalHtml(state) {
-    const g = state.phase === 'day' && this.goal(state);
-    if (!g) return '';
+    if (state.phase !== 'day') return '';
+    const g = this.goal(state), side = !Build.done('storage') && Build.open('storage');
+    if (!g && !side) return '';
     const item = id => {
       const b = BUILDINGS[id], done = Build.done(id);
       if (done) return `<li class="done">✓ ${b.name}</li>`;
@@ -168,7 +166,8 @@ const Hud = {
         .map(([k, n]) => `<i class="${have[k] < left[k] ? 'lack' : ''}">${n} ${left[k]}</i>`).join(' · ');
       return `<li>☐ ${b.name} <b>${Build.progress[id] || 0}/${b.work}</b> <small>${b.where}</small>${mats ? `<div class="mats">필요: ${mats}</div>` : ''}</li>`;
     };
-    return `<div class="gt">${g.title}</div>${g.sub ? `<div class="gs">${g.sub}</div>` : ''}<ul>${g.ids.map(item).join('')}</ul>`;
+    const main = g ? `<div class="gt">${g.title}</div>${g.sub ? `<div class="gs">${g.sub}</div>` : ''}<ul>${g.ids.map(item).join('')}</ul>` : '';
+    return main + (side ? `<div class="gside">곁 미션</div><ul>${item('storage')}</ul>` : '');
   },
 
   update(dt, state) {

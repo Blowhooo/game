@@ -10,7 +10,7 @@ const TUTORIAL = {
     { row: 1, cols: [2, 3],    crop: 'carrot',  ripe: true },
     { row: 2, cols: [1, 2],    crop: 'carrot',  ripe: false },
   ],
-  // 시험용 시작(주소에 ?test): 이 날 아침, 가게 · 창고를 다 짓고 마을 가게 · 배추 씨앗이 열린 상태 → 바로 A가 온다
+  // 시험용 시작(주소에 ?test): 이 날 아침(A 이야기는 다 들은 것으로), 가게 · 창고를 다 짓고 마을 가게 · 배추 씨앗이 열린 상태 → 바로 A가 온다
   // 첫 시험에서 6일째쯤 이 상태였다. 돈 · 씨앗 · 낸 요리 수는 짐작
-  test: { day: 6, money: 150, seeds: { carrot: 4, potato: 4, cabbage: 4 }, served: 8, built: ['shop', 'storage'] },
+  test: { day: 6, money: 150, seeds: { carrot: 4, potato: 4, cabbage: 4 }, served: 8, built: ['shop', 'storage'], talked: 3 },
 };

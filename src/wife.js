@@ -16,8 +16,8 @@ const Wife = {
   place() { Object.assign(this, Player.spot(...(this.resting() ? STORY.birth.at : WIFE.at))); },
   resting() { return state.born && state.day > state.born && state.day <= state.born + this.restDays(); },
   restDays() { return STORY.birth.rest - Build.effect('restLess'); },   // 아기방을 지으면 줄어듦
-  // 배가 불러 오며 줄어드는 기력. 출산하면 없어진다
-  heavy() { return state.born ? 0 : Math.max(0, Math.min(STORY.pregnant.max, state.day - STORY.pregnant.from + 1)); },
+  // 배가 불러 오며 줄어드는 기력: 미션 2 동안(A가 온 뒤 ~ 출산)
+  heavy() { return state.hero && !state.born ? STORY.pregnant.energy : 0; },
 
   say(kind) {
     const lines = WIFE.lines[kind];

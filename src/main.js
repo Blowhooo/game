@@ -1,10 +1,10 @@
 // phase = 'day'(낮) → 'night'(하루 끝 화면). seed = 심으려고 고른 씨앗(한 번 쓰면 풀림)
 // min = 오늘 흐른 게임 속 분, fed = 오늘 채운 먹을 몫, snack = 오늘 새참 먹었나, restLeft = 쉰 덕분 버프가 남은 날
 // crops = 소식으로 씨앗이 풀린 작물, hero = A가 가게에 남았나, born = 아기가 태어난 날(0 = 아직) (→ data/story.js)
-// log = 수첩의 기록: [{ day, text }]
+// log = 수첩의 기록: [{ day, text }], talked = 들은 A 이야기 수, heroDay = A가 온 날
 const state = {
   day: 1, phase: 'day', min: 0, seed: null, money: TUTORIAL.start.money,
-  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0, hero: false, born: 0, log: [],
+  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0, hero: false, born: 0, log: [], talked: 0, heroDay: 0,
 };
 // 수첩에 남길 일 (→ src/hud.js 수첩)
 const note = text => state.log.push({ day: state.day, text });
@@ -32,7 +32,7 @@ Hud.say(loaded ? `${state.day}일째 아침부터 이어서` : '1일째 아침')
 // 시험용 시작: 전날 밤까지 해 둔 것으로 하고 다음 날 아침으로 → A가 온다. 주소의 ?test는 지워서 다시 열면 이어서
 if (testing) {
   const t = TUTORIAL.test;
-  Object.assign(state, { day: t.day - 1, money: t.money });
+  Object.assign(state, { day: t.day - 1, money: t.money, talked: t.talked });
   Object.assign(Farm.seeds, t.seeds);
   Cooking.served = t.served;
   for (const id of t.built) Build.progress[id] = BUILDINGS[id].work;
@@ -74,13 +74,14 @@ function endDay() {
   const news = TOWN.news.find(n => n.day === state.day);
   if (news?.opens) World.opened.add(news.opens);
   if (news?.crop) state.crops.add(news.crop);
-  // A가 오기 전엔 마을 사람의 A 이야기, 정한 날엔 출산 (→ data/story.js)
-  const talk = !state.hero && STORY.talks.find(t => t.day === state.day);
-  const birth = !state.born && state.day >= STORY.birth.day;
+    // 미션 따라 이야기: 가게를 짓는 동안 A 이야기(진행도 차례로), 아기 맞을 준비를 다 한 날 밤 출산 (→ data/story.js)
+  const t = STORY.talks[state.talked], talk = !state.hero && t && (Build.progress.shop || 0) >= t.at && t;
+  if (talk) state.talked++;
+  const birth = state.hero && !state.born && Build.babyReady();
   if (birth) { state.born = state.day; note('아기가 태어났다'); }
   if (news) note(`손님 소식: ${news.line}`);
   if (talk) note(`${STORY.people[talk.lines[0][0]].name}에게 A 이야기를 들었다`);
-  const night = () => Hud.night(state, summary, news, birth && { text: STORY.born + '<br><br>' + (Build.babyReady() ? STORY.ready : STORY.notReady) });
+  const night = () => Hud.night(state, summary, news, birth && { text: STORY.born + '<br><br>' + STORY.ready });
   if (talk) Hud.story(talk.lines, night); else night();
 }
 
@@ -110,9 +111,9 @@ function nextDay() {
   Wife.place();
   // 가게를 다 지은 다음 날 아침 A가 나타난다. 장면을 보기 전에 저장해서 다시 열어도 한 번만
   const arrive = !state.hero && Build.done('shop');
-  if (arrive) { state.hero = true; World.block(...STORY.hero.at); note('A가 찾아왔다 — 전쟁 영웅은 사실 남편이었다. A가 가게 일을 돕게 됐다'); }
+  if (arrive) { state.hero = true; state.heroDay = state.day; World.block(...STORY.hero.at); note('A가 찾아왔다 — 전쟁 영웅은 사실 남편이었다. A가 가게 일을 돕게 됐다'); }
   Save.write();
-  Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + Wife.restDays() + 1 && STORY.back) || remind() || state.day + '일째 아침');
+  Hud.say((state.heroDay && state.day === state.heroDay + 1 && STORY.pregnant.line) || (state.born && state.day === state.born + Wife.restDays() + 1 && STORY.back) || remind() || state.day + '일째 아침');
   if (arrive) {
     state.phase = 'story';
     Hud.story(STORY.arrive, () => {

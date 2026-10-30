@@ -70,15 +70,14 @@ const Render = {
     this.draw(this.sprite(set), (i % set.cols) * T, Math.floor(i / set.cols) * T, T, T, x, y);
   },
 
-  // 땅: 칸마다 잔디 · 숲 바닥 → 반 칸 밀린 듀얼 그리드로 길 · 밭(→ docs/기술.md 1 땅 그리기). 타일셋의 잔디는 투명이라 밑이 비침
+  // 땅: 잔디를 깔고 → 반 칸 밀린 듀얼 그리드로 숲 바닥 · 길 · 밭(→ docs/기술.md 1 땅 그리기). 타일셋의 잔디는 투명이라 밑이 비침
   floor() {
-    const T = CONFIG.tile, G = SPR_GROUND;
+    const T = CONFIG.tile, G = SPR_GROUND, grass = this.sprite(G.grass);
     for (let ty = 0; ty < World.h; ty++)
-      for (let tx = 0; tx < World.w; tx++)
-        this.draw(this.sprite(this.ground(tx, ty) === 'forest' ? G.forest : G.grass), 0, 0, T, T, tx * T, ty * T);
+      for (let tx = 0; tx < World.w; tx++) this.draw(grass, 0, 0, T, T, tx * T, ty * T);
     for (let vy = 0; vy <= World.h; vy++)
       for (let vx = 0; vx <= World.w; vx++)
-        for (const layer of ['path', 'soil']) {
+        for (const layer of ['forest', 'path', 'soil']) {
           const is = (dx, dy) => this.ground(vx + dx, vy + dy) === layer;
           const n = is(-1, -1) * 8 | is(0, -1) * 4 | is(-1, 0) * 2 | is(0, 0);
           if (n) this.wang(G[layer], n, vx * T - T / 2, vy * T - T / 2);

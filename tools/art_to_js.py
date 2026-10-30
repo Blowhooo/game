@@ -4,9 +4,11 @@ python tools/art_to_js.py   → sprites/ground.js · sprites/forest.js 를 새�
 - 타일셋(Retro Diffusion rd_tile__tileset, 16칸 × 4×5장): 칸마다 네 모서리가 「잔디(g)인지 아닌지」를 색으로 읽어
   corners[네 모서리 번호] = 칸 번호 를 같이 적는다. 번호: 왼위 8 · 오른위 4 · 왼아래 2 · 오른아래 1 (잔디가 아닌 쪽이 1)
   잔디 색 픽셀은 투명으로 — 타일셋마다 잔디 색이 조금씩 달라 경계가 떠 보이므로, 밑에 깐 잔디(grass) · 숲 바닥이 비치게
+- 숲 바닥 = 잔디를 어둡게(따로 뽑은 숲 바닥은 잔디와 색이 안 맞았다). 경계는 길 타일셋의 모양을 빌려 숲 바닥으로 채운 타일셋
+- 나무 · 덤불 잎은 잔디 쪽(노란 연두)으로 색을 옮긴다(뽑은 그대로는 잔디보다 파랗고 진했다)
 - 물건: 투명은 '.', 열매처럼 빨간 색은 picked(땄을 때) 팔레트에서 그 그림의 잎 색으로 바꿔 둔다
 """
-import json
+import colorsys, json
 from PIL import Image
 
 RAW = 'art/raw/'
@@ -31,7 +33,25 @@ def encode(im):
     return {ch[c]: '#%02x%02x%02x' % c for c in used}, rows
 
 
-def tileset(path, grass_tile):
+def shade(im, v=1.0, s=1.0, h=0.0, only=lambda H: True):
+    """밝기 v · 채도 s 배, 색상 h만큼 돌림. only(색상)가 참인 픽셀만"""
+    out = []
+    for p in im.convert('RGBA').getdata():
+        H, S, V = colorsys.rgb_to_hsv(*(c / 255 for c in p[:3]))
+        if p[3] and only(H):
+            p = tuple(round(c * 255) for c in colorsys.hsv_to_rgb((H + h) % 1, min(1, S * s), V * v)) + (p[3],)
+        out.append(p)
+    im = Image.new('RGBA', im.size); im.putdata(out)
+    return im
+
+
+green = lambda H: 0.2 < H < 0.45
+GRASS = Image.open(RAW + 'grass_base.png')            # 길 타일셋의 잔디 칸을 잘라 둔 것 = 기준 잔디
+FOREST = shade(GRASS, v=0.72, h=0.02)                 # 숲 바닥
+
+
+def tileset(path, grass_tile, fill=None):
+    """fill을 주면 잔디 아닌 자리를 그 16칸 무늬로 채운다(모양만 빌림)"""
     im = Image.open(RAW + path).convert('RGB')
     gx, gy = grass_tile
     grass = set(im.crop((gx * T, gy * T, gx * T + T, gy * T + T)).getdata())
@@ -46,12 +66,17 @@ def tileset(path, grass_tile):
     assert len(corners) == 16, f'{path}: 모서리 조합이 {len(corners)}가지뿐'
     rgba = Image.open(RAW + path).convert('RGBA')
     rgba.putdata([(0, 0, 0, 0) if p[:3] in grass else p for p in rgba.getdata()])
+    if fill:
+        f, px = fill.load(), rgba.load()
+        for y in range(rgba.height):
+            for x in range(rgba.width):
+                if px[x, y][3]: px[x, y] = f[x % T, y % T]
     pal, rows = encode(rgba)
     return {'palette': pal, 'rows': rows, 'cols': im.width // T, 'corners': corners}
 
 
-def thing(path, berries=False):
-    pal, rows = encode(Image.open(RAW + path))
+def thing(src, berries=False):
+    pal, rows = encode(Image.open(RAW + src) if isinstance(src, str) else src)
     out = {'palette': pal, 'rows': rows}
     if berries:
         rgb = {k: tuple(int(v[i:i + 2], 16) for i in (1, 3, 5)) for k, v in pal.items()}
@@ -74,12 +99,12 @@ if __name__ == '__main__':
     write('ground', '땅 그림. 타일셋은 듀얼 그리드용(→ docs/기술.md 1 땅 그리기)', {
         'soil': tileset('tiles_grass_soil2.png', (0, 4)),
         'path': tileset('tiles_grass_path.png', (0, 3)),
-        'grass': thing('grass_base.png'),   # 길 타일셋의 잔디 칸을 잘라 둔 것
-        'forest': thing('forest_floor_0.png'),
+        'forest': tileset('tiles_grass_path.png', (0, 3), fill=FOREST),
+        'grass': thing(GRASS),
     })
     write('forest', '숲 그림. 크기 · 기준점은 → docs/아트_규격.md 2', {
-        'wood': thing('tree_1.png'),
+        'wood': thing(shade(Image.open(RAW + 'tree_1.png'), v=0.92, s=0.85, h=-0.03, only=green)),
         'stone': thing('rock_0.png'),
-        'bush': thing('bush_1.png', berries=True),
+        'bush': thing(shade(Image.open(RAW + 'bush_1.png'), v=0.92, s=0.85, h=-0.03, only=green), berries=True),
     })
     print('sprites/ground.js · sprites/forest.js')

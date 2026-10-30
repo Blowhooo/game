@@ -9,10 +9,14 @@ const Wife = {
   speech: null, speechTimer: 0,
 
   init() {
-    const [tx, ty] = WIFE.at;
-    Object.assign(this, Player.spot(tx, ty));
-    World.block(tx, ty);
+    World.block(...WIFE.at);
+    this.place();
   },
+  // 서 있는 곳: 출산 뒤 쉬는 동안엔 집 앞(→ data/story.js birth)
+  place() { Object.assign(this, Player.spot(...(this.resting() ? STORY.birth.at : WIFE.at))); },
+  resting() { return state.born && state.day > state.born && state.day <= state.born + STORY.birth.rest; },
+  // 배가 불러 오며 줄어드는 기력. 출산하면 없어진다
+  heavy() { return state.born ? 0 : Math.max(0, Math.min(STORY.pregnant.max, state.day - STORY.pregnant.from + 1)); },
 
   say(kind) {
     const lines = WIFE.lines[kind];
@@ -21,7 +25,12 @@ const Wife = {
   },
   sayText(text) { this.speech = text; this.speechTimer = 3; },
 
-  energy() { return WIFE.energy + Build.effect('energy') + (state.restLeft > 0 ? DAY.rest.energy : 0); },
+  // 쉬는 동안 가게는 A 혼자 (A가 없으면 장사 없음)
+  energy() {
+    const hero = state.hero ? STORY.hero.energy : 0;
+    if (this.resting()) return hero;
+    return WIFE.energy + Build.effect('energy') + (state.restLeft > 0 ? DAY.rest.energy : 0) + hero - this.heavy();
+  },
   tired() { return this.sold >= this.energy(); },
   readyCount() { return Object.values(this.ready).reduce((a, n) => a + n, 0); },
   canSell() { return !this.tired() && this.readyCount() > 0; },
@@ -42,7 +51,7 @@ const Wife = {
     if (!items.length) return false;
     items.sort((a, b) => Cooking.price(a) - Cooking.price(b));
     let fed = 0;
-    while (state.fed < DAY.food && items.length) { items.shift(); state.fed++; fed++; }
+    while (state.fed < foodNeed() && items.length) { items.shift(); state.fed++; fed++; }
     this.queue.push(...items);
     this.say(fed && !items.length ? 'food' : 'receive');
     return true;

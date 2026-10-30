@@ -58,13 +58,15 @@ const Hud = {
     document.getElementById('nightNews').innerHTML = lines.filter(Boolean).join('<br>');
     document.getElementById('nightText').innerHTML = scene ? scene.text : '';
     const art = document.getElementById('nightArt'), ctx = art.getContext('2d');
-    art.style.display = scene ? '' : 'none';
-    if (scene) for (const [x, y, w, h, c] of scene.art) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+    art.style.display = scene?.art ? '' : 'none';
+    if (scene?.art) for (const [x, y, w, h, c] of scene.art) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
     document.getElementById('night').classList.add('on');
   },
-  // 하루 끝: 장면 없이 오늘 결과만 (→ docs/기획.md 4). news = 오늘 손님이 알려 준 소식(있으면)
-  night(state, s, news) {
-    this.show(`${state.day}일째 끝 · 손님 ${s.served}명 · 번 돈 ${s.earned}`, null, [
+  // 하루 끝: 오늘 결과만 (→ docs/기획.md 4). news = 오늘 손님이 알려 준 소식, talk = 마을 사람의 A 이야기, scene = 출산 같은 한 번뿐인 장면
+  night(state, s, news, talk, scene) {
+    this.show(`${state.day}일째 끝 · 손님 ${s.served}명 · 번 돈 ${s.earned}`, scene || null, [
+      talk && `${talk.who} 들러 말했다: ${talk.line}`,
+      talk && talk.wife,
       s.left && (s.keep ? `남은 재료 ${s.left}개는 창고에` : `남은 재료 ${s.left}개 (창고가 있으면 내일까지 둘 수 있어요)`),
       news && `손님이 말했다: ${news.line}`,
       news?.opens && `${TOWN.shops[news.opens].name} 가는 문이 열렸다`,
@@ -75,13 +77,26 @@ const Hud = {
     this.show(`${state.day}일째 · 쉬는 날`, null,
       [`푹 쉬었다 — 다음 ${DAY.rest.days}일 동안 몸이 가볍고, 아내도 힘이 난다`]);
   },
+  // 이야기 장면: 한 줄씩 「다음」으로 넘기고, 끝나면 done()
+  story(lines, done) {
+    const el = document.getElementById('story'), text = document.getElementById('storyText'), btn = document.getElementById('storyNext');
+    let i = 0;
+    const show = () => { text.innerHTML = lines[i]; btn.textContent = i < lines.length - 1 ? '다음' : '닫기'; };
+    btn.onclick = () => {
+      if (++i < lines.length) return show();
+      el.classList.remove('on');
+      done();
+    };
+    show();
+    el.classList.add('on');
+  },
   hideNight() { document.getElementById('night').classList.remove('on'); },
 
   // 처음 이틀은 지금 할 일을 한 줄로 알려 준다 — 임시 색 네모라 무엇이 무엇인지 안 보여서
   hint(state) {
     if (state.day > TUTORIAL.days || state.phase !== 'day') return '';
-    if (state.fed < DAY.food && !Farm.bagCount()) return '밭(갈색)에서 다 자란 칸을 그어 캐요 — 먹을 것이 먼저 필요해요';
-    if (state.fed < DAY.food || Farm.bagCount()) return '캔 것은 아내 옆 작업대(살구색)를 눌러 건네요 — 우리 먹을 몫을 먼저 떼고, 나머지를 팔아요';
+    if (state.fed < foodNeed() && !Farm.bagCount()) return '밭(갈색)에서 다 자란 칸을 그어 캐요 — 먹을 것이 먼저 필요해요';
+    if (state.fed < foodNeed() || Farm.bagCount()) return '캔 것은 아내 옆 작업대(살구색)를 눌러 건네요 — 우리 먹을 몫을 먼저 떼고, 나머지를 팔아요';
     if (Build.done('shop')) return '가게 완성! 다음은 창고 터(오른쪽 위)를 지을 수 있어요';
     const need = Build.need('shop');
     if (Forest.wood < need.wood || Forest.stone < need.stone)
@@ -106,11 +121,12 @@ const Hud = {
     const buffs = [state.snack && '새참', state.restLeft > 0 && `쉰 덕분 ${state.restLeft}일`].filter(Boolean);
     const next = Cooking.next();
     const waiting = Wife.queue.length + (Wife.current ? 1 : 0);
+    const baby = state.born ? `아기 ${state.day - state.born + 1}일째` : `아기 나오기까지 ${Math.max(0, STORY.birth.day - state.day)}일`;
     this.topEl.textContent = [
-      [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`, `오늘 먹을 것 ${Math.min(state.fed, DAY.food)}/${DAY.food}`, buffs.join(' · ')].filter(Boolean).join('  |  '),
+      [`${state.day}일째 ${clock(state)}`, `돈 ${state.money}`, `오늘 먹을 것 ${Math.min(state.fed, foodNeed())}/${foodNeed()}`, buffs.join(' · ')].filter(Boolean).join('  |  '),
       [`가방 ${Farm.bagCount()}/${CONFIG.bagSize}: ${list(Farm.bag)}`, `나무 ${Forest.wood} · 돌 ${Forest.stone}`].join('  |  '),
-      [`아내 — 손질 기다림 ${waiting} · 요리 ${Wife.readyCount()} · 기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}`,
-        next ? `다음 메뉴까지 ${Cooking.served}/${next.at}` : '메뉴 다 열림'].join('  |  '),
+      [Wife.resting() ? `아내 — 아기 보며 쉬는 중 · 가게는 ${STORY.name}가 · 기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}` : `아내 — 손질 기다림 ${waiting} · 요리 ${Wife.readyCount()} · 기력 ${Math.max(0, Wife.energy() - Wife.sold)}/${Wife.energy()}`,
+        next ? `다음 메뉴까지 ${Cooking.served}/${next.at}` : '메뉴 다 열림', state.hero && `${STORY.name}와 함께`, baby].filter(Boolean).join('  |  '),
     ].join('\n');
   },
 };

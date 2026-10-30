@@ -31,6 +31,10 @@
   #night.on { display: flex; }
   #nightArt { position: static; flex: none; height: min(192px, 30vh); aspect-ratio: 5 / 3; image-rendering: pixelated; }
   #nightDay { font-size: 14px; opacity: .7; }
+  #story { display: none; position: fixed; inset: 0; background: #0d0b14e6; flex-direction: column; gap: 16px;
+    align-items: center; justify-content: center; font-size: 17px; line-height: 1.6; text-align: center; z-index: 7; padding: 24px; box-sizing: border-box; }
+  #story.on { display: flex; }
+  #storyText { max-width: 640px; }
   #store { display: none; position: fixed; inset: 0; background: #1e1a17ee; flex-direction: column; gap: 12px;
     align-items: center; justify-content: safe center; z-index: 6; padding: 12px; box-sizing: border-box; overflow-y: auto; }
   #store.on { display: flex; }
@@ -53,12 +57,13 @@
 <div id="bottom" class="bar">
   <div id="seeds"></div>
   <div class="gap"></div>
-  <span id="mapKey" style="display:none"><b style="color:#7fb2ff">●</b> 나 <b style="color:#f2a8c0">●</b> 아내 <b style="color:#ffd76a">●</b> 지나가는 사람</span>
+  <span id="mapKey" style="display:none"><b style="color:#7fb2ff">●</b> 나 <b style="color:#f2a8c0">●</b> 아내 <b style="color:#fff4b0">●</b> A <b style="color:#ffd76a">●</b> 지나가는 사람</span>
   <button id="mapBtn">지도</button>
   <button id="restBtn">오늘은 쉬자</button>
   <button id="endBtn">하루 마치기</button>
 </div>
 <div id="night"><div id="nightDay"></div><canvas id="nightArt" width="80" height="48"></canvas><div id="nightText"></div><div id="nightNews"></div><button id="nextDay">다음 날</button><button id="resetBtn" class="small">처음부터 다시</button></div>
+<div id="story"><div id="storyText"></div><button id="storyNext">다음</button></div>
 <div id="store"><div id="storeTitle"></div><div id="storeList"></div><button id="storeClose">나가기</button></div>
 <div id="rotate">가로로 돌려 주세요</div>
 
@@ -74,6 +79,7 @@
 <script src="data/forest.js"></script>
 <script src="data/build.js"></script>
 <script src="data/town.js"></script>
+<script src="data/story.js"></script>
 <script src="sprites/ground.js"></script>
 <script src="sprites/forest.js"></script>
 <script src="src/world.js"></script>

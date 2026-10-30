@@ -1,9 +1,9 @@
 // phase = 'day'(낮) → 'night'(하루 끝 화면). seed = 심으려고 고른 씨앗(한 번 쓰면 풀림)
 // min = 오늘 흐른 게임 속 분, fed = 오늘 채운 먹을 몫, snack = 오늘 새참 먹었나, restLeft = 쉰 덕분 버프가 남은 날
-// crops = 소식으로 씨앗이 풀린 작물
+// crops = 소식으로 씨앗이 풀린 작물, hero = A가 가게에 남았나, born = 아기가 태어난 날(0 = 아직) (→ data/story.js)
 const state = {
   day: 1, phase: 'day', min: 0, seed: null, money: TUTORIAL.start.money,
-  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0,
+  tools: new Set(), crops: new Set(), fed: 0, snack: false, restLeft: 0, hero: false, born: 0,
 };
 
 World.load(MAP);
@@ -13,6 +13,7 @@ const loaded = !location.search.includes('new') && Save.read();
 Store.init();
 Player.init();
 Wife.init();
+if (state.hero) World.block(...STORY.hero.at);
 Guests.init();
 Render.init();
 Touch.init(Render.canvas);
@@ -39,6 +40,8 @@ function advance(kind) {
   Wife.work(min);
 }
 const dayMinutes = () => (DAY.to - DAY.from) * 60;
+// 오늘 먹을 몫: 식구가 늘면 는다 (→ docs/기획.md 5 일꾼도 먹는다)
+const foodNeed = () => DAY.food + (state.hero ? STORY.hero.food : 0);
 const hourNow = () => DAY.from + state.min / 60;
 
 // 하루 끝(남편의 시계가 다 됐거나 「하루 마치기」): 남은 재료 정리 · 소식 · 밤 장면
@@ -56,7 +59,11 @@ function endDay() {
   const news = TOWN.news.find(n => n.day === state.day);
   if (news?.opens) World.opened.add(news.opens);
   if (news?.crop) state.crops.add(news.crop);
-  Hud.night(state, summary, news);
+  // A가 오기 전엔 마을 사람의 A 이야기, 정한 날엔 출산 (→ data/story.js)
+  const talk = !state.hero && STORY.talks.find(t => t.day === state.day);
+  const birth = !state.born && state.day >= STORY.birth.day;
+  if (birth) state.born = state.day;
+  Hud.night(state, summary, news, talk, birth && { text: STORY.born });
 }
 
 // 쉬는 날: 아침에만 고를 수 있다. 일하지 않고 둘이 보내는 장면 → 다음 며칠 버프 (→ docs/기획.md 4)
@@ -75,8 +82,19 @@ function nextDay() {
   Object.assign(state, { day: state.day + 1, phase: 'day', min: 0, fed: 0, snack: false });
   Player.setJobs([]);
   Player.init();
+  Wife.place();
+  // 가게를 다 지은 다음 날 아침 A가 나타난다. 장면을 보기 전에 저장해서 다시 열어도 한 번만
+  const arrive = !state.hero && Build.done('shop');
+  if (arrive) { state.hero = true; World.block(...STORY.hero.at); }
   Save.write();
-  Hud.say(state.day + '일째 아침');
+  Hud.say(STORY.morning[state.day] || (state.born && state.day === state.born + STORY.birth.rest + 1 && STORY.back) || state.day + '일째 아침');
+  if (arrive) {
+    state.phase = 'story';
+    Hud.story(STORY.arrive, () => {
+      state.phase = 'day';
+      Hud.say(`${STORY.name}가 가게 일을 돕게 됐어요 — 아내 하루 장사 한도 +${STORY.hero.energy}, 먹을 몫 +${STORY.hero.food}`);
+    });
+  }
 }
 
 // 누른 칸에 맞는 일: 밭은 긋기, 작업대 · 아내는 건네기, 숲은 따기, 터는 짓기, 마을 가게는 들어가기, 그 밖은 걸어가기
@@ -152,7 +170,7 @@ Player.onArrive = job => {
   }
   if (job.build) {
     // 먹을 몫을 채워야 짓는다 — 벌이 아니라 순서 (→ docs/기획.md 5)
-    if (state.fed < DAY.food) { Hud.say('먹을 것부터 구해야 해…'); return; }
+    if (state.fed < foodNeed()) { Hud.say('먹을 것부터 구해야 해…'); return; }
     const done = Build.work(job.build);
     Hud.say(done.msg);
     if (!done.ok) return;

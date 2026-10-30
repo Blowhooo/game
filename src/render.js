@@ -169,6 +169,7 @@ const Render = {
       list.push({ y: ty * T + T - 1, draw: () => this.gatherIcon(World.tile(tx, ty).gather, tx * T, ty * T, Forest.isPicked(tx, ty)) });
     list.push({ y: Player.y, draw: () => this.player() });
     list.push({ y: Wife.y, draw: () => this.wife() });
+    if (state.hero) list.push({ y: this.heroSpot().y, draw: () => this.hero() });
     for (const g of Guests.list) list.push({ y: g.y, draw: () => this.guest(g) });
     list.sort((a, b) => a.y - b.y).forEach(o => o.draw());
 
@@ -185,6 +186,7 @@ const Render = {
     if (this.mapOpen) {
       for (const g of Guests.list) this.dot(g.x, g.y, '#ffd76a');
       this.dot(Wife.x, Wife.y, '#f2a8c0');
+      if (state.hero) this.dot(this.heroSpot().x, this.heroSpot().y, '#fff4b0');
       this.dot(Player.x, Player.y, '#7fb2ff');
     }
     this.scale = keep;
@@ -234,6 +236,18 @@ const Render = {
     if (g.eat > 0) this.rect(g.x - 4, y - 2, 8, 3, '#fff8ec');
   },
 
+  // 임시 A: 반짝이는 미남 — 밝은 머리 · 흰 옷 (→ docs/기획.md 3)
+  heroSpot() { return Player.spot(...STORY.hero.at); },
+  hero() {
+    const { x: hx, y: hy } = this.heroSpot(), x = hx - 8, y = hy - 32;
+    this.rect(hx - 5, hy - 2, 10, 3, '#0003');
+    this.rect(x + 3, y + 14, 10, 17, '#f4f0e6');             // 몸
+    this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
+    this.rect(x + 3, y + 2, 10, 4, '#f2d36a');               // 머리카락
+    this.rect(x + 5, y + 8, 2, 2, '#2a1e16'); this.rect(x + 9, y + 8, 2, 2, '#2a1e16');  // 눈
+    if (Math.floor(performance.now() / 400) % 2) this.rect(x + 14, y + 1, 2, 2, '#fffbe0');  // 반짝
+  },
+
   // 지을 터: 다 짓기 전엔 진행 막대
   sites() {
     const T = CONFIG.tile;
@@ -254,7 +268,9 @@ const Render = {
     const x = Wife.x - 8, y = Wife.y - 32;
     this.rect(Wife.x - 5, Wife.y - 2, 10, 3, '#0003');
     this.rect(x + 3, y + 14, 10, 17, '#b5536a');             // 몸
-    this.rect(x + 2, y + 19, 3, 6, '#b5536a');               // 배
+    // 배: 출산 날에 가까울수록 불러 온다. 태어난 뒤엔 등에 아기
+    if (!state.born) { const b = 1 + Math.round(3 * Math.min(1, state.day / STORY.birth.day)); this.rect(x + 3 - b, y + 19, b, 6, '#b5536a'); }
+    else { this.rect(x + 10, y + 15, 5, 7, '#f2e6c8'); this.rect(x + 11, y + 12, 4, 4, '#f0c9a0'); }
     this.rect(x + 4, y + 4, 8, 10, '#f0c9a0');               // 머리
     this.rect(x + 3, y + 3, 10, 4, '#5a3a22');               // 머리카락
     this.rect(x + 4, y + 8, 2, 2, '#2a1e16');                // 눈

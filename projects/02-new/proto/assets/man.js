@@ -1,0 +1,1 @@
+window.SHEETS=window.SHEETS||{};SHEETS["man"]={"src": "man.png", "cell": 48, "anims": {"stand": {"south": [0, 1], "south-east": [1, 1], "east": [2, 1], "north-east": [3, 1], "north": [4, 1], "north-west": [5, 1], "west": [6, 1], "south-west": [7, 1]}}};

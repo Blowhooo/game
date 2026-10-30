@@ -31,10 +31,21 @@
   #night.on { display: flex; }
   #nightArt { position: static; flex: none; height: min(192px, 30vh); aspect-ratio: 5 / 3; image-rendering: pixelated; }
   #nightDay { font-size: 14px; opacity: .7; }
-  #story { display: none; position: fixed; inset: 0; background: #0d0b14e6; flex-direction: column; gap: 16px;
-    align-items: center; justify-content: center; font-size: 17px; line-height: 1.6; text-align: center; z-index: 7; padding: 24px; box-sizing: border-box; }
+  /* 대화창: 화면 아래, 얼굴 · 이름 · 대사. 아무 데나 누르면 다음 */
+  #story { display: none; position: fixed; inset: 0; background: #0d0b1466; z-index: 7; align-items: flex-end; justify-content: center;
+    padding: 0 12px max(12px, env(safe-area-inset-bottom)); box-sizing: border-box; cursor: pointer; }
   #story.on { display: flex; }
-  #storyText { max-width: 640px; }
+  #talkBox { position: relative; display: flex; gap: 14px; align-items: flex-start; width: 100%; max-width: 860px; min-height: 120px;
+    padding: 14px 40px 14px 14px; box-sizing: border-box; background: #2b231df2; border: 3px solid #5a4636; border-radius: 10px; }
+  #talkFace { flex: none; width: 96px; height: 96px; border-radius: 6px; border: 2px solid #5a4636; display: flex;
+    align-items: center; justify-content: center; font-size: 40px; font-weight: bold; color: #fff8ec; overflow: hidden; }
+  #talkFace img { width: 100%; height: 100%; object-fit: cover; }
+  #talkName { color: #ffd76a; font-weight: bold; margin-bottom: 6px; }
+  #talkText { font-size: 17px; line-height: 1.6; }
+  #talkBox.narration { justify-content: center; text-align: center; font-style: italic; color: #d8cbb8; }
+  #talkBox.narration > div:not(#talkMore) { flex: 1; }
+  #talkMore { position: absolute; right: 14px; bottom: 10px; color: #ffd76a; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
   #store { display: none; position: fixed; inset: 0; background: #1e1a17ee; flex-direction: column; gap: 12px;
     align-items: center; justify-content: safe center; z-index: 6; padding: 12px; box-sizing: border-box; overflow-y: auto; }
   #store.on { display: flex; }
@@ -63,7 +74,7 @@
   <button id="endBtn">하루 마치기</button>
 </div>
 <div id="night"><div id="nightDay"></div><canvas id="nightArt" width="80" height="48"></canvas><div id="nightText"></div><div id="nightNews"></div><button id="nextDay">다음 날</button><button id="resetBtn" class="small">처음부터 다시</button></div>
-<div id="story"><div id="storyText"></div><button id="storyNext">다음</button></div>
+<div id="story"><div id="talkBox"><div id="talkFace"></div><div><div id="talkName"></div><div id="talkText"></div></div><div id="talkMore">▼</div></div></div>
 <div id="store"><div id="storeTitle"></div><div id="storeList"></div><button id="storeClose">나가기</button></div>
 <div id="rotate">가로로 돌려 주세요</div>
 

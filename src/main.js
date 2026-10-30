@@ -63,7 +63,8 @@ function endDay() {
   const talk = !state.hero && STORY.talks.find(t => t.day === state.day);
   const birth = !state.born && state.day >= STORY.birth.day;
   if (birth) state.born = state.day;
-  Hud.night(state, summary, news, talk, birth && { text: STORY.born });
+  const night = () => Hud.night(state, summary, news, birth && { text: STORY.born });
+  if (talk) Hud.story(talk.lines, night); else night();
 }
 
 // 쉬는 날: 아침에만 고를 수 있다. 일하지 않고 둘이 보내는 장면 → 다음 며칠 버프 (→ docs/기획.md 4)

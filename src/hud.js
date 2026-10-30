@@ -62,11 +62,9 @@ const Hud = {
     if (scene?.art) for (const [x, y, w, h, c] of scene.art) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
     document.getElementById('night').classList.add('on');
   },
-  // 하루 끝: 오늘 결과만 (→ docs/기획.md 4). news = 오늘 손님이 알려 준 소식, talk = 마을 사람의 A 이야기, scene = 출산 같은 한 번뿐인 장면
-  night(state, s, news, talk, scene) {
+  // 하루 끝: 오늘 결과만 (→ docs/기획.md 4). news = 오늘 손님이 알려 준 소식, scene = 출산 같은 한 번뿐인 장면
+  night(state, s, news, scene) {
     this.show(`${state.day}일째 끝 · 손님 ${s.served}명 · 번 돈 ${s.earned}`, scene || null, [
-      talk && `${talk.who} 들러 말했다: ${talk.line}`,
-      talk && talk.wife,
       s.left && (s.keep ? `남은 재료 ${s.left}개는 창고에` : `남은 재료 ${s.left}개 (창고가 있으면 내일까지 둘 수 있어요)`),
       news && `손님이 말했다: ${news.line}`,
       news?.opens && `${TOWN.shops[news.opens].name} 가는 문이 열렸다`,
@@ -77,12 +75,24 @@ const Hud = {
     this.show(`${state.day}일째 · 쉬는 날`, null,
       [`푹 쉬었다 — 다음 ${DAY.rest.days}일 동안 몸이 가볍고, 아내도 힘이 난다`]);
   },
-  // 이야기 장면: 한 줄씩 「다음」으로 넘기고, 끝나면 done()
+  // 대화창: [말하는 사람, 대사]를 한 줄씩, 화면 아무 데나 누르면 다음. 끝나면 done() (→ data/story.js)
+  // 얼굴 그림이 없으면 빈 틀에 그 사람 색 · 이름 첫 글자
   story(lines, done) {
-    const el = document.getElementById('story'), text = document.getElementById('storyText'), btn = document.getElementById('storyNext');
+    const el = document.getElementById('story'), box = document.getElementById('talkBox');
+    const face = document.getElementById('talkFace'), name = document.getElementById('talkName'), text = document.getElementById('talkText');
     let i = 0;
-    const show = () => { text.innerHTML = lines[i]; btn.textContent = i < lines.length - 1 ? '다음' : '닫기'; };
-    btn.onclick = () => {
+    const show = () => {
+      const [who, line] = lines[i], p = STORY.people[who];
+      box.classList.toggle('narration', !p);
+      face.style.display = name.style.display = p ? '' : 'none';
+      if (p) {
+        face.innerHTML = p.face ? `<img src="${p.face}">` : p.name[0];
+        face.style.background = p.face ? '' : p.color;
+        name.textContent = p.name;
+      }
+      text.textContent = line;
+    };
+    el.onclick = () => {
       if (++i < lines.length) return show();
       el.classList.remove('on');
       done();

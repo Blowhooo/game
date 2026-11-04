@@ -11,6 +11,7 @@
 | `index.html` | GitHub Pages 첫 화면 — 게임 목록 |
 
 - **지금 하는 게임**: `projects/02-new/` (새 게임 구상)
+- **곁가지 · 다른 폴더**: `D:\ai\agent-office` — 에이전트 사무실(Claude 세션을 픽셀 캐릭터로 보여 주는 화면, 이 PC 전용). 그림 도구 · 키는 이 저장소의 `shared/` · `.env`를 같이 쓴다. 자세한 건 그 폴더의 `CLAUDE.md`
 - **`.env`** (깃에 안 올림, 저장소 맨 위): PixelLab · Retro Diffusion 키
 - **GitHub**: `https://github.com/Blowhooo/game` (공개) · GitHub Pages(main 올리면 1~2분 뒤 반영): `https://blowhooo.github.io/game/` → 게임 목록, 길가식당은 `…/game/projects/01-gilga/`
 - **예전 아이디어 · 보관(읽기만)**: `D:\윤준후\imotto_project\projects\02\prototypes\` (예전 시제품들) · `D:\ai\game_보관_1029.zip`(길가식당 기획 전 테스트)
